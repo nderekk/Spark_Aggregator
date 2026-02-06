@@ -14,15 +14,21 @@ const createCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
     try {
-        const { page = 1, limit = 10, provider, title } = req.query;
+        const { page = 1, limit = 10, provider, title, language, level, category} = req.query;
 
         const query = {};
         if (provider) query.provider = provider;
-        if (title) query.title = { $regex: title, $options: 'i' }; // Αναζήτηση με μέρος του τίτλου
+        if (title) query.title = { $regex: title, $options: 'i' };
+        if (language) query.language = language;
+        if (level) query.level = level;
+        if (category) query.category = category;
+
+        if(title) query.title = { $regex: title, $options: 'i' };
 
         const courses = await Course.find(query)
             .limit(limit * 1)
             .skip((page - 1) * limit)
+            .sort({ createdAt: -1 })
             .exec();
 
         const count = await Course.countDocuments(query);
@@ -30,7 +36,8 @@ const getAllCourses = async (req, res) => {
         res.json({
             courses,
             totalPages: Math.ceil(count / limit),
-            currentPage: Number(page)
+            currentPage: Number(page),
+            totalResults: count
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch courses' });
