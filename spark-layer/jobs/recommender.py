@@ -101,7 +101,7 @@ nlp_pipeline = Pipeline(stages=[
 nlp_model = nlp_pipeline.fit(cleaned_df)
 processed_df = nlp_model.transform(cleaned_df)
 
-tokens_df = processed_df.select("course_id", "tokens")
+tokens_df = processed_df.select("course_id", "title", "tokens")
 
 from pyspark.ml.feature import CountVectorizer, IDF
 from pyspark.sql import functions as fun
@@ -152,10 +152,20 @@ lda_df = lda_model.transform(vectorized_df)
 lda_df.select(fun.col('title'), fun.col('topicDistribution')).\
   show(2, vertical=True, truncate=False)
 
-from pyspark.ml.types import IntergerType
-from pyspark.sql.functions import udf
+from pyspark.ml.functions import vector_to_array
+from pyspark.sql.functions import expr
 
-max_index = fun.udf(lambda x: x.toList().index(max(x)) + 1, IntegerType())
-lda_df = lda_df.withColumn("topic_index", max_index(fun.col("topicDistribution")))
+# 1. Convert the vector to an array first (this makes it 'visible' to SQL)
+lda_df = lda_df.withColumn("topic_array", vector_to_array(col("topicDistribution")))
+
+# 2. Use a SQL expression to find the index of the max value in that array
+# array_position is 1-based in Spark SQL
+lda_df = lda_df.withColumn("topic_index", 
+    expr("array_position(topic_array, array_max(topic_array))")
+)
+
+# 3. Clean up the temporary array column
+lda_df = lda_df.drop("topic_array")
+
 print("Course titles with their assigned topic index:")
 lda_df.select('title', 'topic_index').show(10, truncate=False)
