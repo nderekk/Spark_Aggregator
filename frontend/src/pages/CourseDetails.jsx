@@ -200,25 +200,29 @@ const CourseDetails = () => {
           <div className="course-sidebar">
             <div className="sidebar-section">
               <h3 className="sidebar-title">Παρόμοια Μαθήματα</h3>
-              <p className="sidebar-subtitle">
-                Προτεινόμενα από το σύστημα ML
-              </p>
               <div className="similar-courses-list">
                 {similarCourses.length > 0 ? (
-                  similarCourses.map((similar) => (
-                    <div
-                      key={similar._id}
-                      className="similar-course-card"
-                      onClick={() => navigate(`/courses/${similar._id}`)}
-                    >
-                      <div className="similar-course-header">
-                        <span className="similar-level">{similar.level}</span>
+                  similarCourses.map((similar) => {
+                    const matchPercentage = similar.score ? Math.round((1 - similar.score) * 100) : null;
+
+                    return (
+                      <div
+                        key={similar._id}
+                        className="similar-course-card"
+                        onClick={() => navigate(`/courses/${similar._id}`)}
+                      >
+                        <div className="similar-course-header">
+                          <span className="similar-level">{similar.level}</span>
+                          {/* DISPLAY THE PERCENTAGE HERE */}
+                          {matchPercentage && (
+                            <span className="match-score">{matchPercentage}% Ταύτιση</span>
+                          )}
+                        </div>
+                        <h4 className="similar-title">{similar.title}</h4>
+                        <span className="similar-source">{similar.source}</span>
                       </div>
-                      <h4 className="similar-title">{similar.title}</h4>
-                      <p className="similar-description">{similar.description}</p>
-                      <span className="similar-source">{similar.source}</span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="no-similar">Δεν βρέθηκαν παρόμοια μαθήματα</p>
                 )}
