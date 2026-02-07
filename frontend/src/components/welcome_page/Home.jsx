@@ -16,8 +16,21 @@ const Home = () => {
     source: '',
     category: ''
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(21);
   const navigate = useNavigate();
 
+    
+  const totalPages = Math.ceil(courses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCourses = courses.slice(startIndex, endIndex);
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   // 1. Check Authentication
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -80,6 +93,7 @@ const Home = () => {
     }
 
     setCourses(result);
+    setCurrentPage(1);
   }, [searchTerm, filters, allCourses]);
 
   const fetchCourses = async () => {
@@ -144,6 +158,7 @@ const Home = () => {
       category: ''
     });
     setSearchTerm('');
+    setCurrentPage(1);
   };
 
   if (!isAuthenticated) {
@@ -288,30 +303,90 @@ const Home = () => {
               </button>
             </div>
           ) : (
-            <div className="courses-grid">
-              {courses.map((course) => (
-                <div key={course._id} className="course-card">
-                  <div className="course-header">
-                    <span className="course-level">{course.level}</span>
-                    <span className="course-source">{course.source}</span>
+            <>
+              <div className="courses-grid">
+                {paginatedCourses.map((course) => (
+                  <div key={course._id} className="course-card">
+                    <div className="course-header">
+                      <span className="course-level">{course.level}</span>
+                      <span className="course-source">{course.source}</span>
+                    </div>
+                    <h3 className="course-title">{course.title}</h3>
+                    <p className="course-description">{course.description}</p>
+                    <div className="course-meta">
+                      <span className="meta-item">📚 {course.category}</span>
+                      <span className="meta-item">🌍 {course.language}</span>
+                    </div>
+                    <div className="course-footer">
+                      <button
+                        onClick={() => navigate(`/courses/${course._id}`)}
+                        className="view-details-btn"
+                      >
+                        Λεπτομέρειες
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="course-title">{course.title}</h3>
-                  <p className="course-description">{course.description}</p>
-                  <div className="course-meta">
-                    <span className="meta-item">📚 {course.category}</span>
-                    <span className="meta-item">🌍 {course.language}</span>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pagination-container">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    «
+                  </button>
+                  
+                  <div className="pagination-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Εμφάνιση όλων των σελίδων αν είναι λίγες, αλλιώς εμφάνιση με ...
+                      if (totalPages <= 7) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else {
+                        // Λογική για πολλές σελίδες
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return <span key={page} className="pagination-dots">...</span>;
+                        }
+                        return null;
+                      }
+                    })}
                   </div>
-                  <div className="course-footer">
-                    <button
-                      onClick={() => navigate(`/courses/${course._id}`)}
-                      className="view-details-btn"
-                    >
-                      Λεπτομέρειες
-                    </button>
-                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    »
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
