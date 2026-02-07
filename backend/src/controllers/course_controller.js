@@ -34,6 +34,21 @@ const getAllCourses = async (req, res) => {
     }
 };
 
+const getCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const course = await Course.findById(id);
+
+        res.json({
+            course
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+};
+
+
 const getSimilarCourses = async (req, res) => {
     try {
         const { id } = req.params;
@@ -135,5 +150,6 @@ module.exports = {
     syncSource,
     createCourse,
     updateCourse,
-    deleteCourse
+    deleteCourse,
+    getCourse
 };

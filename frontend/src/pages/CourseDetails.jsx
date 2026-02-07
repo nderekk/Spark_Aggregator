@@ -19,28 +19,10 @@ const CourseDetails = () => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:3000/courses/${id}`);
-      setCourse(response.data);
+      //console.log(response.data.course)
+      setCourse(response.data.course);
     } catch (error) {
       console.error('Error fetching course:', error);
-      // Mock data για development
-      setCourse({
-        _id: id,
-        title: 'Introduction to Machine Learning',
-        description: 'Learn the fundamentals of machine learning with Python. This comprehensive course covers supervised learning, unsupervised learning, neural networks, and deep learning. You will work on real-world projects and gain hands-on experience with popular ML libraries like scikit-learn, TensorFlow, and PyTorch.',
-        fullDescription: 'This course provides a broad introduction to machine learning, datamining, and statistical pattern recognition. Topics include: (i) Supervised learning (parametric/non-parametric algorithms, support vector machines, kernels, neural networks). (ii) Unsupervised learning (clustering, dimensionality reduction, recommender systems, deep learning). (iii) Best practices in machine learning (bias/variance theory; innovation process in machine learning and AI). The course will also draw from numerous case studies and applications, so that you will also learn how to apply learning algorithms to building smart robots (perception, control), text understanding (web search, anti-spam), computer vision, medical informatics, audio, database mining, and other areas.',
-        category: 'Computer Science',
-        keywords: ['machine learning', 'python', 'AI', 'data science', 'neural networks'],
-        language: 'English',
-        level: 'beginner',
-        source: 'Coursera',
-        sourceUrl: 'https://coursera.org/ml-intro',
-        enrollUrl: 'https://coursera.org/ml-intro/enroll',
-        updatedAt: '2024-01-15',
-        duration: '11 weeks',
-        instructor: 'Andrew Ng',
-        rating: 4.8,
-        enrolled: 2500000
-      });
     } finally {
       setLoading(false);
     }
