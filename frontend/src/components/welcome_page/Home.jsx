@@ -54,7 +54,7 @@ const Home = () => {
     // Filter by Search Term
     if (searchTerm) {
       result = result.filter(course => 
-        (course.title || "").toLowerCase().includes(searchTerm.toLowerCase())
+        (course.title || course.description || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
