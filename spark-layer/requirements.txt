@@ -1,0 +1,7 @@
+pyspark==3.5.0
+pyarrow==23.0.0
+pymongo[srv]
+pandas
+numpy
+setuptools
+spark-nlp
