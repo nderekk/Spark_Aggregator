@@ -118,3 +118,44 @@ vectorized_df = vectorized_df.drop(fun.col('raw_features'))
 
 print(f"Total rows in vectorized_df: {vectorized_df.count()}")
 vectorized_df.show(5)
+
+from pyspark.ml.clustering import LDA 
+ 
+num_topics = 5
+max_iter = 50
+
+lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="features")
+lda_model = lda.fit(vectorized_df)
+
+# the lower the perplexity, the better the model is at predicting the sample
+lp = lda_model.logPerplexity(vectorized_df)
+print(f"Log Perplexity upper bound: {lp}")
+
+vocab = cv_model.vocabulary
+
+raw_topics = lda_model.describeTopics().collect()
+
+topic_inds = [ind.termIndices for ind in raw_topics]
+
+topics = []
+for topic in topic_inds:
+  _topic = []
+  for ind in topic:
+    _topic.append(vocab[ind])
+  topics.append(_topic)
+
+print("Top terms for each topic:")
+for i, topic in enumerate(topics, start=1):
+  print(f"topic {i}: {topic}")
+
+lda_df = lda_model.transform(vectorized_df)
+lda_df.select(fun.col('title'), fun.col('topicDistribution')).\
+  show(2, vertical=True, truncate=False)
+
+from pyspark.ml.types import IntergerType
+from pyspark.sql.functions import udf
+
+max_index = fun.udf(lambda x: x.toList().index(max(x)) + 1, IntegerType())
+lda_df = lda_df.withColumn("topic_index", max_index(fun.col("topicDistribution")))
+print("Course titles with their assigned topic index:")
+lda_df.select('title', 'topic_index').show(10, truncate=False)
