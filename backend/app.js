@@ -13,6 +13,7 @@ app.use(cors());
 const connectDB = require('./src/config/db');
 const courseRoutes = require('./src/routes/course_routes');
 const userRoutes = require('./src/routes/user_routes');
+const analyticsRoutes = require('./src/routes/analytics_routes');
 
 // MongoDB connection
 connectDB();
@@ -24,6 +25,7 @@ app.use(logger);
 // Routes
 app.use('/courses', courseRoutes);
 app.use('/users', userRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // Start server
 app.listen(port, () => {

@@ -20,40 +20,28 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/analytics/stats');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/analytics/stats', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      // Mock data για development
       setStats({
-        totalCourses: 15432,
-        bySource: [
-          { name: 'Coursera', count: 5234, percentage: 34 },
-          { name: 'Udemy', count: 4521, percentage: 29 },
-          { name: 'MIT OpenCourseWare', count: 3123, percentage: 20 },
-          { name: 'edX', count: 2554, percentage: 17 }
-        ],
-        byLanguage: [
-          { name: 'English', count: 8432, percentage: 55 },
-          { name: 'Greek', count: 3211, percentage: 21 },
-          { name: 'Spanish', count: 2145, percentage: 14 },
-          { name: 'French', count: 1644, percentage: 10 }
-        ],
-        byLevel: [
-          { name: 'Beginner', count: 6172, percentage: 40 },
-          { name: 'Intermediate', count: 5544, percentage: 36 },
-          { name: 'Advanced', count: 3716, percentage: 24 }
-        ],
-        byCategory: [
-          { name: 'Computer Science', count: 4329, percentage: 28 },
-          { name: 'Business', count: 3086, percentage: 20 },
-          { name: 'Data Science', count: 2772, percentage: 18 },
-          { name: 'Web Development', count: 2315, percentage: 15 },
-          { name: 'Design', count: 1544, percentage: 10 },
-          { name: 'Other', count: 1386, percentage: 9 }
-        ],
-        recentUpdates: 234,
-        lastSync: '2024-01-30T10:30:00Z'
+        totalCourses: 0,
+        bySource: [],
+        byLanguage: [],
+        byLevel: [],
+        byCategory: [],
+        uniqueSources: 0,
+        uniqueCategories: 0,
+        uniqueLanguages: 0,
+        topCategory: null,
+        topSource: null,
+        coursesWithDescription: 0,
+        descriptionPercentage: 0,
       });
     } finally {
       setLoading(false);
@@ -98,118 +86,204 @@ const Analytics = () => {
           </div>
 
           <div className="stat-card stat-card-success">
-            <div className="stat-icon">🔄</div>
+            <div className="stat-icon">🌐</div>
             <div className="stat-content">
-              <h3>Πρόσφατες Ενημερώσεις</h3>
-              <p className="stat-number">{stats.recentUpdates}</p>
+              <h3>Μοναδικές Πηγές</h3>
+              <p className="stat-number">{stats.uniqueSources}</p>
             </div>
           </div>
 
           <div className="stat-card stat-card-info">
-            <div className="stat-icon">🕒</div>
+            <div className="stat-icon">📁</div>
             <div className="stat-content">
-              <h3>Τελευταίος Συγχρονισμός</h3>
-              <p className="stat-text">
-                {new Date(stats.lastSync).toLocaleString('el-GR')}
-              </p>
+              <h3>Κατηγορίες</h3>
+              <p className="stat-number">{stats.uniqueCategories}</p>
             </div>
           </div>
+
+          <div className="stat-card stat-card-warning">
+            <div className="stat-icon">🌍</div>
+            <div className="stat-content">
+              <h3>Γλώσσες</h3>
+              <p className="stat-number">{stats.uniqueLanguages}</p>
+            </div>
+          </div>
+
+          {stats.topCategory && (
+            <div className="stat-card stat-card-accent">
+              <div className="stat-icon">⭐</div>
+              <div className="stat-content">
+                <h3>Κορυφαία Κατηγορία</h3>
+                <p className="stat-text">{stats.topCategory.name}</p>
+                <p className="stat-subtext">{stats.topCategory.count.toLocaleString()} μαθήματα</p>
+              </div>
+            </div>
+          )}
+
+          {stats.topSource && (
+            <div className="stat-card stat-card-accent2">
+              <div className="stat-icon">🏆</div>
+              <div className="stat-content">
+                <h3>Κορυφαία Πηγή</h3>
+                <p className="stat-text">{stats.topSource.name}</p>
+                <p className="stat-subtext">{stats.topSource.count.toLocaleString()} μαθήματα</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Charts Grid */}
         <div className="charts-grid">
           {/* By Source */}
           <div className="chart-card">
-            <h2 className="chart-title">Μαθήματα ανά Πηγή</h2>
-            <div className="chart-content">
-              {stats.bySource.map((item, index) => (
-                <div key={index} className="chart-bar-item">
-                  <div className="chart-bar-label">
-                    <span className="label-name">{item.name}</span>
-                    <span className="label-count">{item.count.toLocaleString()}</span>
-                  </div>
-                  <div className="chart-bar-container">
-                    <div
-                      className="chart-bar"
-                      style={{ width: `${item.percentage}%` }}
-                    >
-                      <span className="bar-percentage">{item.percentage}%</span>
+            <h2 className="chart-title">📡 Μαθήματα ανά Πηγή</h2>
+            {stats.bySource.length > 0 ? (
+              <div className="chart-content">
+                {stats.bySource.map((item, index) => (
+                  <div key={index} className="chart-bar-item">
+                    <div className="chart-bar-label">
+                      <span className="label-name">{item.name}</span>
+                      <span className="label-count">{item.count.toLocaleString()}</span>
+                    </div>
+                    <div className="chart-bar-container">
+                      <div
+                        className="chart-bar"
+                        style={{ width: `${item.percentage}%` }}
+                      >
+                        <span className="bar-percentage">{item.percentage}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="chart-empty">Δεν υπάρχουν δεδομένα</div>
+            )}
           </div>
 
           {/* By Language */}
           <div className="chart-card">
-            <h2 className="chart-title">Μαθήματα ανά Γλώσσα</h2>
-            <div className="chart-content">
-              {stats.byLanguage.map((item, index) => (
-                <div key={index} className="chart-bar-item">
-                  <div className="chart-bar-label">
-                    <span className="label-name">{item.name}</span>
-                    <span className="label-count">{item.count.toLocaleString()}</span>
-                  </div>
-                  <div className="chart-bar-container">
-                    <div
-                      className="chart-bar chart-bar-language"
-                      style={{ width: `${item.percentage}%` }}
-                    >
-                      <span className="bar-percentage">{item.percentage}%</span>
+            <h2 className="chart-title">🌍 Μαθήματα ανά Γλώσσα</h2>
+            {stats.byLanguage.length > 0 ? (
+              <div className="chart-content">
+                {stats.byLanguage.map((item, index) => (
+                  <div key={index} className="chart-bar-item">
+                    <div className="chart-bar-label">
+                      <span className="label-name">{item.name}</span>
+                      <span className="label-count">{item.count.toLocaleString()}</span>
+                    </div>
+                    <div className="chart-bar-container">
+                      <div
+                        className="chart-bar chart-bar-language"
+                        style={{ width: `${item.percentage}%` }}
+                      >
+                        <span className="bar-percentage">{item.percentage}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="chart-empty">Δεν υπάρχουν δεδομένα</div>
+            )}
           </div>
 
           {/* By Level */}
           <div className="chart-card">
-            <h2 className="chart-title">Μαθήματα ανά Επίπεδο</h2>
-            <div className="chart-content">
-              {stats.byLevel.map((item, index) => (
-                <div key={index} className="chart-bar-item">
-                  <div className="chart-bar-label">
-                    <span className="label-name">{item.name}</span>
-                    <span className="label-count">{item.count.toLocaleString()}</span>
-                  </div>
-                  <div className="chart-bar-container">
-                    <div
-                      className="chart-bar chart-bar-level"
-                      style={{ width: `${item.percentage}%` }}
-                    >
-                      <span className="bar-percentage">{item.percentage}%</span>
+            <h2 className="chart-title">📊 Μαθήματα ανά Επίπεδο</h2>
+            {stats.byLevel.length > 0 ? (
+              <div className="chart-content">
+                {stats.byLevel.map((item, index) => (
+                  <div key={index} className="chart-bar-item">
+                    <div className="chart-bar-label">
+                      <span className="label-name">{item.name}</span>
+                      <span className="label-count">{item.count.toLocaleString()}</span>
+                    </div>
+                    <div className="chart-bar-container">
+                      <div
+                        className="chart-bar chart-bar-level"
+                        style={{ width: `${item.percentage}%` }}
+                      >
+                        <span className="bar-percentage">{item.percentage}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="chart-empty">Δεν υπάρχουν δεδομένα</div>
+            )}
           </div>
-
           {/* By Category */}
-          <div className="chart-card chart-card-wide">
-            <h2 className="chart-title">Μαθήματα ανά Θεματική Κατηγορία</h2>
-            <div className="chart-content">
-              {stats.byCategory.map((item, index) => (
-                <div key={index} className="chart-bar-item">
-                  <div className="chart-bar-label">
-                    <span className="label-name">{item.name}</span>
-                    <span className="label-count">{item.count.toLocaleString()}</span>
-                  </div>
-                  <div className="chart-bar-container">
-                    <div
-                      className="chart-bar chart-bar-category"
-                      style={{ width: `${item.percentage}%` }}
-                    >
-                      <span className="bar-percentage">{item.percentage}%</span>
+          <div className="chart-card">
+            <h2 className="chart-title">📁 Μαθήματα ανά Θεματική Κατηγορία</h2>
+            {stats.byCategory.length > 0 ? (
+              <div className="chart-content">
+                {stats.byCategory.map((item, index) => (
+                  <div key={index} className="chart-bar-item">
+                    <div className="chart-bar-label">
+                      <span className="label-name">{item.name}</span>
+                      <span className="label-count">{item.count.toLocaleString()}</span>
+                    </div>
+                    <div className="chart-bar-container">
+                      <div
+                        className="chart-bar chart-bar-category"
+                        style={{ width: `${item.percentage}%` }}
+                      >
+                        <span className="bar-percentage">{item.percentage}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="chart-empty">Δεν υπάρχουν δεδομένα</div>
+            )}
           </div>
         </div>
+
+        {/* Additional Statistics */}
+        {stats.totalCourses > 0 && (
+          <div className="additional-stats-section">
+            <h2 className="section-title">📈 Επιπλέον Στατιστικά</h2>
+            <div className="additional-stats-grid">
+              <div className="additional-stat-card">
+                <div className="additional-stat-icon">📝</div>
+                <div className="additional-stat-info">
+                  <h3>Μαθήματα με Περιγραφή</h3>
+                  <p className="additional-stat-number">{stats.coursesWithDescription.toLocaleString()}</p>
+                  <p className="additional-stat-percentage">{stats.descriptionPercentage}% του συνόλου</p>
+                </div>
+              </div>
+              
+              <div className="additional-stat-card">
+                <div className="additional-stat-icon">📊</div>
+                <div className="additional-stat-info">
+                  <h3>Μέσος Όρος ανά Κατηγορία</h3>
+                  <p className="additional-stat-number">
+                    {stats.uniqueCategories > 0 
+                      ? Math.round(stats.totalCourses / stats.uniqueCategories) 
+                      : 0}
+                  </p>
+                  <p className="additional-stat-percentage">μαθήματα ανά κατηγορία</p>
+                </div>
+              </div>
+
+              <div className="additional-stat-card">
+                <div className="additional-stat-icon">🌐</div>
+                <div className="additional-stat-info">
+                  <h3>Μέσος Όρος ανά Πηγή</h3>
+                  <p className="additional-stat-number">
+                    {stats.uniqueSources > 0 
+                      ? Math.round(stats.totalCourses / stats.uniqueSources) 
+                      : 0}
+                  </p>
+                  <p className="additional-stat-percentage">μαθήματα ανά πηγή</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Info Section */}
         <div className="info-section">
