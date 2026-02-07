@@ -20,10 +20,7 @@ const getAllCourses = async (req, res) => {
         if (provider) query.provider = provider;
         if (title) query.title = { $regex: title, $options: 'i' }; // Αναζήτηση με μέρος του τίτλου
 
-        const courses = await Course.find(query)
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
-            .exec();
+        const courses = await Course.find(query);
 
         const count = await Course.countDocuments(query);
 
