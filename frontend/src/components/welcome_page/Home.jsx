@@ -343,7 +343,7 @@ const Home = () => {
                   <div className="pagination-numbers">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                       // Εμφάνιση όλων των σελίδων αν είναι λίγες, αλλιώς εμφάνιση με ...
-                      if (totalPages <= 7) {
+                      if (totalPages <= 15) {
                         return (
                           <button
                             key={page}
@@ -354,11 +354,14 @@ const Home = () => {
                           </button>
                         );
                       } else {
-                        // Λογική για πολλές σελίδες
+                        const pagesToShow = 8; // Αριθμός σελίδων αριστερά και δεξιά από την τρέχουσα
+                        const startPage = Math.max(1, currentPage - pagesToShow);
+                        const endPage = Math.min(totalPages, currentPage + pagesToShow);
+                        
                         if (
                           page === 1 ||
                           page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
+                          (page >= startPage && page <= endPage)
                         ) {
                           return (
                             <button
@@ -369,7 +372,7 @@ const Home = () => {
                               {page}
                             </button>
                           );
-                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                        } else if (page === startPage - 1 || page === endPage + 1) {
                           return <span key={page} className="pagination-dots">...</span>;
                         }
                         return null;
