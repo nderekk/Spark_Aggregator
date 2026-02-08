@@ -1,34 +1,37 @@
-const fs = require('fs');
-const csv = require('csv-parser');
-const path = require('path');
+const axios = require('axios');
+const dotenv = require('dotenv');
+dotenv.config();
 
-async function getCourses() {
-    const results = [];
-    const filePath = path.join(__dirname, '../../data/udemy_courses.csv');
-    
-    return new Promise((resolve, reject) => {
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on('data', (data) => results.push(data))
-            .on('end', () => resolve(results))
-            .on('error', (error) => reject(error));
-    });
+async function getCourses(){
+    try {
+        console.log("Fetching courses from Repo B...");
+        const response = await axios.get(process.env.REPO_B_URL);
+        return {
+            modules: response.data.modules || [],
+            learningPaths: response.data.learningPaths || []
+        };
+    } catch (error) {
+        console.error("Connector Error:", error.response ? error.response.data : error.message);
+        throw error;
+    }
 }
 
 function normalize(data) {
-    const courses = Array.isArray(data) ? data : [];
-
-    return courses.map(course => ({
-        externalId: `udemy-${course.course_id}`,
-        title: course.course_title,
-        description: course.description ,
-        provider: 'Udemy',
-        url: course.course_url,
-        language: course.language || 'en',
-        level: course.level || 'Beginner',
-        category: course.category || 'General',
-        keywords: course.keywords || []
+    const all_items = [...(data.modules || []), ...(data.learningPaths || [])];
+    if(all_items.length === 0) return [];
+    return all_items.map(item => ({
+        externalId: item.uid, 
+        title: item.title,
+        description: item.summary || "No description available",
+        provider: 'Microsoft Learn',
+        url: item.url,
+        language: item.locale || 'en',
+        level: (item.levels && item.levels.length > 0) ? item.levels[0] : 'Beginner',
+        category: (item.roles && item.roles.length > 0) ? item.roles[0] : 'Technical',
+        keywords: item.products || [],
+        source: 'Repo B '
     }));
+
 }
 
 module.exports = {
