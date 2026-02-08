@@ -27,8 +27,6 @@ const getAllCourses = async (req, res) => {
         if(title) query.title = { $regex: title, $options: 'i' };
 
         const courses = await Course.find(query)
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
             .sort({ createdAt: -1 })
             .exec();
 

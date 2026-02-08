@@ -19,7 +19,7 @@ const CourseDetails = () => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:3000/courses/${id}`);
-      //console.log(response.data.course)
+      console.log(response.data.course)
       setCourse(response.data.course);
     } catch (error) {
       console.error('Error fetching course:', error);
@@ -34,30 +34,6 @@ const CourseDetails = () => {
       setSimilarCourses(response.data);
     } catch (error) {
       console.error('Error fetching similar courses:', error);
-      // Mock data
-      setSimilarCourses([
-        {
-          _id: '2',
-          title: 'Deep Learning Specialization',
-          description: 'Master deep learning and neural networks',
-          level: 'intermediate',
-          source: 'Coursera'
-        },
-        {
-          _id: '3',
-          title: 'Applied Data Science with Python',
-          description: 'Learn data science using Python',
-          level: 'beginner',
-          source: 'Coursera'
-        },
-        {
-          _id: '4',
-          title: 'Machine Learning with TensorFlow',
-          description: 'Build ML models with TensorFlow',
-          level: 'intermediate',
-          source: 'Udemy'
-        }
-      ]);
     }
   };
 
