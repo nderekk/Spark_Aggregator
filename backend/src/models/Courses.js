@@ -12,7 +12,6 @@ const courseSchema = new mongoose.Schema({
     source: { type: String }, 
     provider: { type: String },
     url: { type: String },
-    similarCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }] 
 }, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);
