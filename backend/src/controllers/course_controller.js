@@ -30,12 +30,9 @@ const getAllCourses = async (req, res) => {
         if (level) query.level = level;
         if (category) query.category = category;
         
-        const skip = (page - 1) * limit;
 
         const courses = await Course.find(query)
             .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(Number(limit))
             .exec();
 
 
