@@ -4,8 +4,14 @@ const mongoose = require('mongoose');
 
 const createCourse = async (req, res) => {
     try {
-        const { title, provider, externalId, url } = req.body;
-        const newCourse = new Course({ title, provider, externalId, url });
+        const { 
+            title, provider, externalId, url, 
+            description, language, level, category, keywords, source 
+        } = req.body;
+        const newCourse = new Course({ 
+            title, provider, externalId, url, 
+            description, language, level, category, keywords, source 
+        });
         await newCourse.save();
         res.status(201).json(newCourse);
     } catch (error) {
@@ -23,11 +29,13 @@ const getAllCourses = async (req, res) => {
         if (language) query.language = language;
         if (level) query.level = level;
         if (category) query.category = category;
-
-        if(title) query.title = { $regex: title, $options: 'i' };
+        
+        const skip = (page - 1) * limit;
 
         const courses = await Course.find(query)
             .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .exec();
 
 
@@ -100,9 +108,9 @@ const syncSource = async (req, res) => {
         const normalized = connector.normalize(data);
 
         const bulkOps = normalized.map(course => ({
-            updateOne: {
+            replaceOne: {
                 filter: { externalId: course.externalId },
-                update: { $set: course },
+                replacement: course,
                 upsert: true
             }
         }));
@@ -167,7 +175,7 @@ const deleteCourse = async (req, res) => {
 
 module.exports = {
     getAllCourses,
-    getCourseById,
+    getCourseById : getCourse,
     getSimilarCourses,
     syncSource,
     createCourse,
