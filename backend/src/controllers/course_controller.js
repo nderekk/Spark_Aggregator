@@ -68,18 +68,25 @@ const getSimilarCourses = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const recommendations = await Recommendation.find({ source_course_id: id })
-            .sort({ rank: 1 })
-            .lean();
+        const recommendations = await Recommendation.find({
+            $or: [
+                { source_course_id: id },
+                { recommended_course_id: id }
+            ]
+        })
+        .sort({ rank: 1 })
+        .limit(5)
+        .lean();
         if (!recommendations.length) return res.json([]);
 
         // 2. Fetch the actual course documents using the recommended IDs
-        const recommendedCourseIds = recommendations.map(r => r.recommended_course_id);
+        const recommendedCourseIds = recommendations.map(r => r.recommended_course_id === id ? r.source_course_id : r.recommended_course_id);
         const courses = await Course.find({ _id: { $in: recommendedCourseIds } }).lean();
 
         // 3. Merge them so React gets the course data + the score
         const results = recommendations.map(rec => {
-            const courseData = courses.find(c => c._id.toString() === rec.recommended_course_id);
+            const targetId = rec.recommended_course_id === id ? rec.source_course_id : rec.recommended_course_id;
+            const courseData = courses.find(c => c._id.toString() === targetId);
             return courseData ? { ...courseData, score: rec.score } : null;
         }).filter(Boolean);
 

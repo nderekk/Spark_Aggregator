@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, concat_ws, length, when, lit
+from pyspark.sql.functions import col, concat_ws, length, when, lit, array_join
 from pyspark.ml.feature import HashingTF, IDF, Tokenizer
 
 atlas_uri = "mongodb+srv://admin:1234@cluster0.mtbfxhi.mongodb.net/?appName=Cluster0"
@@ -28,6 +28,7 @@ raw_df = spark.read.format("mongodb")\
   .option("database", "test") \
   .option("collection", "courses") \
   .load()
+raw_df.persist()
 
 print(f"Total rows in raw_df: {raw_df.count()}")
 raw_df.show(5)
@@ -37,15 +38,17 @@ cleaned_df = raw_df.select(
   col("_id").cast("string").alias("course_id"),
   col("title"),
   col("description"),
+  col("keywords"),
   concat_ws(" ", 
     col("title"), 
     when(col("description") != "No description available", col("description"))
-    .otherwise(lit(""))
+    .otherwise(lit("")),
+    array_join(col("keywords"), " ")
   ).alias("text_content")
 )
 
 print(f"Rows remaining after robust filter: {cleaned_df.count()}")
-cleaned_df.show(5)
+cleaned_df.show(truncate=40)
 
 
 # spark nlp pipeline
@@ -126,11 +129,10 @@ def clean_and_prepare_features(processed_df):
     
   return final_vectorized_df, cv_model
 
-def get_lda_topics(vectorized_df, cv_model):
+def get_lda_topics(vectorized_df, cv_model, num_topics=5):
   # LDA has poor performance with small datasets, especially when there is high topic overlap and text is short liek here. with extensive course descriptions it would perform better.
   from pyspark.ml.clustering import LDA 
   
-  num_topics = 5
   max_iter = 50
 
   lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="features")
@@ -183,10 +185,10 @@ def get_lda_topics(vectorized_df, cv_model):
   return lda_df
 
 # now lets move on to computing similarities between courses based on their topic distributions
-def run_scenario_lda_knn(vectorized_df, cv_model, k=5):
+def run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=15):
   from pyspark.ml.feature import BucketedRandomProjectionLSH
 
-  lda_df = get_lda_topics(vectorized_df, cv_model)
+  lda_df = get_lda_topics(vectorized_df, cv_model, num_topics=num_topics)
 
   lsh = BucketedRandomProjectionLSH(
     inputCol="topicDistribution", 
@@ -200,15 +202,16 @@ def run_scenario_lda_knn(vectorized_df, cv_model, k=5):
   similar_pairs_df = lsh_model.approxSimilarityJoin(
     lsh_df, 
     lsh_df, 
-    threshold=0.2, 
+    threshold=upper_threshold, 
     distCol="EuclideanDistance"
   ).filter(col("datasetA.course_id") < col("datasetB.course_id"))
 
   recommendations = similar_pairs_df.select(
-    col("datasetA.title").alias("course"),
-    col("datasetB.title").alias("recommended_course"),
-    col("EuclideanDistance").alias("distance"),
-    col("datasetA.course_id").alias("id_a")
+    fun.col("datasetA.course_id").alias("id_a"),
+    fun.col("datasetA.title").alias("title_a"),
+    fun.col("datasetB.course_id").alias("id_b"),
+    fun.col("datasetB.title").alias("title_b"),
+    fun.col("EuclideanDistance").alias("distance")
   )
 
   # recommendations.show(5, truncate=False)
@@ -254,7 +257,7 @@ def exact_knn(ground_truth):
       .select("title_a", "title_b", "cosine_sim", "rank")
   return knn_tfidf_df
 
-def approximate_knn(vectorized_df):
+def run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4):
   from pyspark.ml.feature import MinHashLSH
   
   minhash = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=5)
@@ -264,9 +267,9 @@ def approximate_knn(vectorized_df):
   lsh_matches = minhash_model.approxSimilarityJoin(
     lsh_df,
     lsh_df,
-    threshold=0.4,
+    threshold=top_threshold,
     distCol="JaccardDistance"
-  ).filter((col("datasetA.course_id") < col("datasetB.course_id")) & (col("JaccardDistance") > 0.01))
+  ).filter((col("datasetA.course_id") < col("datasetB.course_id")) & (col("JaccardDistance") > bottom_threshold))
   
   flattened_lsh = lsh_matches.select(
     fun.col("datasetA.course_id").alias("id_a"),
@@ -288,10 +291,6 @@ def run_scenario_exact_knn(vectorized_df, k=5):
   gt_results = compute_ground_truth(vectorized_df)
   knn_tfidf_df = exact_knn(gt_results)
   return knn_tfidf_df
-
-def run_scenario_approx_knn(vectorized_df, k=5):
-  lsh_knn_results = approximate_knn(vectorized_df)
-  return lsh_knn_results
 
 def export_to_mongodb(df, collection_name="course_recommendations"):
   """Explicitly writes to Atlas, bypassing session defaults."""
@@ -331,10 +330,10 @@ vectorized_df.show(5)
 # results = run_scenario_exact_knn(vectorized_df)
 
 # Scenario B: Fast TF-IDF (MinHash LSH)
-results = run_scenario_approx_knn(vectorized_df)
+# results = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
 
 # Scenario C: Thematic LDA (BRP LSH)
-# results = run_scenario_lda_knn(vectorized_df, cv_model)
+results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=50)
 
 results.show(20, truncate=False)
 
