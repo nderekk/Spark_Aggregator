@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, concat_ws, length, when, lit
+from pyspark.sql.functions import col, concat_ws, length, when, lit, array_join
 from pyspark.ml.feature import HashingTF, IDF, Tokenizer
 
 atlas_uri = "mongodb+srv://admin:1234@cluster0.mtbfxhi.mongodb.net/?appName=Cluster0"
@@ -28,6 +28,7 @@ raw_df = spark.read.format("mongodb")\
   .option("database", "test") \
   .option("collection", "courses") \
   .load()
+raw_df.persist()
 
 print(f"Total rows in raw_df: {raw_df.count()}")
 raw_df.show(5)
@@ -37,15 +38,17 @@ cleaned_df = raw_df.select(
   col("_id").cast("string").alias("course_id"),
   col("title"),
   col("description"),
+  col("keywords"),
   concat_ws(" ", 
     col("title"), 
     when(col("description") != "No description available", col("description"))
-    .otherwise(lit(""))
+    .otherwise(lit("")),
+    array_join(col("keywords"), " ")
   ).alias("text_content")
 )
 
 print(f"Rows remaining after robust filter: {cleaned_df.count()}")
-cleaned_df.show(5)
+cleaned_df.show(truncate=40)
 
 
 # spark nlp pipeline
@@ -254,7 +257,7 @@ def exact_knn(ground_truth):
       .select("title_a", "title_b", "cosine_sim", "rank")
   return knn_tfidf_df
 
-def run_scenario_approx_knn(vectorized_df, k=5,bottom_threshold=0.01, top_threshold=0.4):
+def run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4):
   from pyspark.ml.feature import MinHashLSH
   
   minhash = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=5)
@@ -330,7 +333,7 @@ vectorized_df.show(5)
 # results = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
 
 # Scenario C: Thematic LDA (BRP LSH)
-results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2)
+results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=50)
 
 results.show(20, truncate=False)
 
