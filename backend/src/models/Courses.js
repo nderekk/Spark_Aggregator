@@ -8,10 +8,10 @@ const courseSchema = new mongoose.Schema({
     language: { type: String, default: "en" }, 
     level: { type: String, default: "Beginner" }, 
     category: { type: String, default: "General" },
+    keywords: [{ type: String }],
     source: { type: String }, 
     provider: { type: String },
     url: { type: String },
-    // to do : add spark recommendation field
     similarCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }] 
 }, { timestamps: true });
 

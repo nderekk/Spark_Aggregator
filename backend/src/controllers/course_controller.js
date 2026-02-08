@@ -1,4 +1,3 @@
-const repoA = require('../services/connectors/repo_a_connector');
 const Course = require('../models/Courses');
 const Recommendation = require('../models/Recommendation');
 const mongoose = require('mongoose');
@@ -16,20 +15,31 @@ const createCourse = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
     try {
-        const { page = 1, limit = 10, provider, title } = req.query;
+        const { page = 1, limit = 10, provider, title, language, level, category} = req.query;
 
         const query = {};
         if (provider) query.provider = provider;
-        if (title) query.title = { $regex: title, $options: 'i' }; // Αναζήτηση με μέρος του τίτλου
+        if (title) query.title = { $regex: title, $options: 'i' };
+        if (language) query.language = language;
+        if (level) query.level = level;
+        if (category) query.category = category;
 
-        const courses = await Course.find(query);
+        if(title) query.title = { $regex: title, $options: 'i' };
+
+        const courses = await Course.find(query)
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .sort({ createdAt: -1 })
+            .exec();
+
 
         const count = await Course.countDocuments(query);
 
         res.json({
             courses,
             totalPages: Math.ceil(count / limit),
-            currentPage: Number(page)
+            currentPage: Number(page),
+            totalResults: count
         });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch courses' });
@@ -82,21 +92,26 @@ const syncSource = async (req, res) => {
 
         let connector;
         try {
-            connector = require(`../services/connectors/${source}`);
+            connector = require(`../services/connectors/${source}.js`);
         } catch (err) {
+            console.error(`Connector for source ${source} not found:`, err);
             return res.status(400).json({ error: `Provider ${source} is not supported yet.` });
         }
 
         const data = await connector.getCourses();
         const normalized = connector.normalize(data);
 
-        for (const c of normalized) {
-            await Course.findOneAndUpdate(
-                { externalId: c.externalId }, 
-                { ...c, source: source }, 
-                { upsert: true, new: true }
-            );
+        const bulkOps = normalized.map(course => ({
+            updateOne: {
+                filter: { externalId: course.externalId },
+                update: { $set: course },
+                upsert: true
+            }
+        }));
+        if (bulkOps.length > 0) {
+            await Course.bulkWrite(bulkOps);
         }
+
 
         return res.json({ 
             message: "Sync successful", 
