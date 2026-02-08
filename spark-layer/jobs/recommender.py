@@ -333,7 +333,7 @@ vectorized_df.show(5)
 # results = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
 
 # Scenario C: Thematic LDA (BRP LSH)
-results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=50)
+results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=10)
 
 results.show(20, truncate=False)
 

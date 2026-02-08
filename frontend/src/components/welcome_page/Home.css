@@ -313,6 +313,12 @@
   color: #6b7280;
   line-height: 1.6;
   margin-bottom: 1rem;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  
+  max-height: 4.5em;
 }
 
 .course-meta {
