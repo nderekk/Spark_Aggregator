@@ -5,7 +5,7 @@ const verifyToken = require('../middleware/auth');
 
 router.get('/',  courseController.getAllCourses);
 router.get('/:id/similar', verifyToken, courseController.getSimilarCourses);
-router.get('/sync/:source', verifyToken, courseController.syncSource);
+router.get('/sync/:source',verifyToken, courseController.syncSource);
 
 router.post('/', verifyToken,courseController.createCourse);
 router.put('/:id', verifyToken, courseController.updateCourse);

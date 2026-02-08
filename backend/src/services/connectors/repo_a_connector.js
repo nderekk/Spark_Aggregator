@@ -40,8 +40,10 @@ function normalize(data) {
         description: item.description || "No description available",
         provider: 'Coursera',
         url: `https://www.coursera.org/learn/${item.slug}`,
-        language: 'en', 
-        level: 'Intermediate' 
+        language: item.language || 'en',
+        level: item.level || 'Beginner',
+        category: item.category || 'General',
+        keywords: item.keywords || []
     }));
 }
 

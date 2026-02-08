@@ -1,4 +1,3 @@
-const repoA = require('../services/connectors/repo_a_connector');
 const Course = require('../models/Courses');
 
 const createCourse = async (req, res) => {
@@ -68,21 +67,26 @@ const syncSource = async (req, res) => {
 
         let connector;
         try {
-            connector = require(`../services/connectors/${source}`);
+            connector = require(`../services/connectors/${source}.js`);
         } catch (err) {
+            console.error(`Connector for source ${source} not found:`, err);
             return res.status(400).json({ error: `Provider ${source} is not supported yet.` });
         }
 
         const data = await connector.getCourses();
         const normalized = connector.normalize(data);
 
-        for (const c of normalized) {
-            await Course.findOneAndUpdate(
-                { externalId: c.externalId }, 
-                { ...c, source: source }, 
-                { upsert: true, new: true }
-            );
+        const bulkOps = normalized.map(course => ({
+            updateOne: {
+                filter: { externalId: course.externalId },
+                update: { $set: course },
+                upsert: true
+            }
+        }));
+        if (bulkOps.length > 0) {
+            await Course.bulkWrite(bulkOps);
         }
+
 
         return res.json({ 
             message: "Sync successful", 
