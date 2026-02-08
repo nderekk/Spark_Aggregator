@@ -6,6 +6,7 @@ import './Home.css';
 const Home = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [allCourses, setAllCourses] = useState([]); //This is the inital courses that are fetched - fetching will happen only once
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,10 +16,23 @@ const Home = () => {
     source: '',
     category: ''
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(21);
   const navigate = useNavigate();
 
+    
+  const totalPages = Math.ceil(courses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCourses = courses.slice(startIndex, endIndex);
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  // 1. Check Authentication
   useEffect(() => {
-    // Έλεγχος authentication
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -30,68 +44,95 @@ const Home = () => {
       } catch (error) {
         console.error('Error parsing user data:', error);
       }
+    } else {
+        // If not logged in, stop loading so the "Login" hero section shows
+        setLoading(false);
+    }
+  }, []);
+
+  // 2. NEW: Fetch courses automatically when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCourses();
+    }
+  }, [isAuthenticated]);
+
+  // 3. Filter Logic (Runs automatically when Search, Filters, or Data changes)
+  useEffect(() => {
+    // If we haven't fetched data yet, do nothing
+    if (allCourses.length === 0) return;
+
+    let result = [...allCourses];
+
+    // Filter by Search Term
+    if (searchTerm) {
+      result = result.filter(course => 
+        (course.title || course.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    // Φόρτωση μαθημάτων
-    fetchCourses();
-  }, []);
+    // Filter by Language
+    if (filters.language) {
+      result = result.filter(course => course.language === filters.language);
+    }
+
+    // Filter by Level
+    if (filters.level) {
+      result = result.filter(course => course.level === filters.level);
+    }
+
+    // Filter by Source 
+    if (filters.provider) {
+      // Changed from 'provider' to 'source' to match the object key usually returned
+      result = result.filter(course => course.provider === filters.provider);
+    }
+
+    // Filter by Category
+    if (filters.category) {
+      result = result.filter(course => course.category === filters.category);
+    }
+
+    setCourses(result);
+    setCurrentPage(1);
+  }, [searchTerm, filters, allCourses]);
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/courses', {
-        params: {
-          search: searchTerm,
-          ...filters
-        }
-      });
-      setCourses(response.data);
+      const response = await axios.get('http://localhost:3000/courses');
+      const data = Array.isArray(response.data) ? response.data : (response.data.courses || []);
+      setCourses(data);
+      setAllCourses(data);
+
+      return data;
     } catch (error) {
       console.error('Error fetching courses:', error);
-      // Mock data για development
-      setCourses([
-        {
-          _id: '1',
-          title: 'Introduction to Machine Learning',
-          description: 'Learn the basics of ML with Python and scikit-learn',
-          category: 'Computer Science',
-          language: 'English',
-          level: 'beginner',
-          source: 'Coursera',
-          sourceUrl: 'https://coursera.org/ml-intro',
-          updatedAt: '2024-01-15'
-        },
-        {
-          _id: '2',
-          title: 'Advanced React Development',
-          description: 'Master React hooks, context, and performance optimization',
-          category: 'Web Development',
-          language: 'English',
-          level: 'advanced',
-          source: 'Udemy',
-          sourceUrl: 'https://udemy.com/react-advanced',
-          updatedAt: '2024-01-20'
-        },
-        {
-          _id: '3',
-          title: 'Data Structures and Algorithms',
-          description: 'Complete guide to DSA with practical examples',
-          category: 'Computer Science',
-          language: 'Greek',
-          level: 'intermediate',
-          source: 'MIT OpenCourseWare',
-          sourceUrl: 'https://ocw.mit.edu/dsa',
-          updatedAt: '2024-01-10'
-        }
-      ]);
+
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    fetchCourses();
+
+    // const raw_data = await fetchCourses(); 
+
+    // //searching is filtering using the title
+    // if (Array.isArray(raw_data)) {
+    //   const filtered_data = raw_data.filter((course) => {
+    //     const title = (course.title || "").toLowerCase();
+    //     //const description = (course.description || "").toLowerCase();
+    //     const search = searchTerm.toLowerCase();
+
+    //     return title.includes(search);
+    //     //return title.includes(search) || description.includes(search);
+    //   });
+
+    //   console.log('Filtered Data:', filtered_data);
+    //   setCourses(filtered_data);
+    // }
+    
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -117,6 +158,7 @@ const Home = () => {
       category: ''
     });
     setSearchTerm('');
+    setCurrentPage(1);
   };
 
   if (!isAuthenticated) {
@@ -172,9 +214,9 @@ const Home = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
-              <button type="submit" className="search-btn">
+              {/*<button type="submit" className="search-btn">
                 Αναζήτηση
-              </button>
+              </button>*/}
             </div>
           </form>
 
@@ -187,10 +229,10 @@ const Home = () => {
                 onChange={(e) => handleFilterChange('language', e.target.value)}
               >
                 <option value="">Όλες</option>
-                <option value="Greek">Ελληνικά</option>
-                <option value="English">Αγγλικά</option>
-                <option value="Spanish">Ισπανικά</option>
-                <option value="French">Γαλλικά</option>
+                <option value="gr">Ελληνικά</option>
+                <option value="en">Αγγλικά</option>
+                <option value="sp">Ισπανικά</option>
+                <option value="fr">Γαλλικά</option>
               </select>
             </div>
 
@@ -201,17 +243,17 @@ const Home = () => {
                 onChange={(e) => handleFilterChange('level', e.target.value)}
               >
                 <option value="">Όλα</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
               </select>
             </div>
 
             <div className="filter-group">
               <label>Πηγή</label>
               <select
-                value={filters.source}
-                onChange={(e) => handleFilterChange('source', e.target.value)}
+                value={filters.provider}
+                onChange={(e) => handleFilterChange('provider', e.target.value)}
               >
                 <option value="">Όλες</option>
                 <option value="Coursera">Coursera</option>
@@ -232,6 +274,7 @@ const Home = () => {
                 <option value="Web Development">Web Development</option>
                 <option value="Data Science">Data Science</option>
                 <option value="Business">Business</option>
+                <option value="General">General</option>
               </select>
             </div>
 
@@ -260,30 +303,93 @@ const Home = () => {
               </button>
             </div>
           ) : (
-            <div className="courses-grid">
-              {courses.map((course) => (
-                <div key={course._id} className="course-card">
-                  <div className="course-header">
-                    <span className="course-level">{course.level}</span>
-                    <span className="course-source">{course.source}</span>
+            <>
+              <div className="courses-grid">
+                {paginatedCourses.map((course) => (
+                  <div key={course._id} className="course-card">
+                    <div className="course-header">
+                      <span className="course-level">{course.level}</span>
+                      <span className="course-source">{course.source}</span>
+                    </div>
+                    <h3 className="course-title">{course.title}</h3>
+                    <p className="course-description">{course.description}</p>
+                    <div className="course-meta">
+                      <span className="meta-item">📚 {course.category}</span>
+                      <span className="meta-item">🌍 {course.language}</span>
+                    </div>
+                    <div className="course-footer">
+                      <button
+                        onClick={() => navigate(`/courses/${course._id}`)}
+                        className="view-details-btn"
+                      >
+                        Λεπτομέρειες
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="course-title">{course.title}</h3>
-                  <p className="course-description">{course.description}</p>
-                  <div className="course-meta">
-                    <span className="meta-item">📚 {course.category}</span>
-                    <span className="meta-item">🌍 {course.language}</span>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pagination-container">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    «
+                  </button>
+                  
+                  <div className="pagination-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Εμφάνιση όλων των σελίδων αν είναι λίγες, αλλιώς εμφάνιση με ...
+                      if (totalPages <= 15) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      } else {
+                        const pagesToShow = 8; // Αριθμός σελίδων αριστερά και δεξιά από την τρέχουσα
+                        const startPage = Math.max(1, currentPage - pagesToShow);
+                        const endPage = Math.min(totalPages, currentPage + pagesToShow);
+                        
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= startPage && page <= endPage)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === startPage - 1 || page === endPage + 1) {
+                          return <span key={page} className="pagination-dots">...</span>;
+                        }
+                        return null;
+                      }
+                    })}
                   </div>
-                  <div className="course-footer">
-                    <button
-                      onClick={() => navigate(`/courses/${course._id}`)}
-                      className="view-details-btn"
-                    >
-                      Λεπτομέρειες
-                    </button>
-                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    »
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>

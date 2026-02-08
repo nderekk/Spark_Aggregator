@@ -1,4 +1,6 @@
 const Course = require('../models/Courses');
+const Recommendation = require('../models/Recommendation');
+const mongoose = require('mongoose');
 
 const createCourse = async (req, res) => {
     try {
@@ -30,6 +32,7 @@ const getAllCourses = async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
+
         const count = await Course.countDocuments(query);
 
         res.json({
@@ -43,21 +46,43 @@ const getAllCourses = async (req, res) => {
     }
 };
 
+const getCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const course = await Course.findById(id);
+
+        res.json({
+            course
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+};
+
+
 const getSimilarCourses = async (req, res) => {
     try {
         const { id } = req.params;
-        // call spark api here , to do recommendation
-        const currentCourse = await Course.findById(id);
-        if (!currentCourse) return res.status(404).json({ error: 'Not found' });
 
-        const similar = await Course.find({ 
-            provider: currentCourse.provider, 
-            _id: { $ne: id } 
-        }).limit(3);
+        const recommendations = await Recommendation.find({ source_course_id: id })
+            .sort({ rank: 1 })
+            .lean();
+        if (!recommendations.length) return res.json([]);
 
-        res.json(similar);
+        // 2. Fetch the actual course documents using the recommended IDs
+        const recommendedCourseIds = recommendations.map(r => r.recommended_course_id);
+        const courses = await Course.find({ _id: { $in: recommendedCourseIds } }).lean();
+
+        // 3. Merge them so React gets the course data + the score
+        const results = recommendations.map(rec => {
+            const courseData = courses.find(c => c._id.toString() === rec.recommended_course_id);
+            return courseData ? { ...courseData, score: rec.score } : null;
+        }).filter(Boolean);
+
+        res.json(results);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch recommendations' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
@@ -149,5 +174,6 @@ module.exports = {
     syncSource,
     createCourse,
     updateCourse,
-    deleteCourse
+    deleteCourse,
+    getCourse
 };
