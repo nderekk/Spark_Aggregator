@@ -67,30 +67,39 @@ const Home = () => {
     // Filter by Search Term
     if (searchTerm) {
       result = result.filter(course => 
-        (course.title || course.description || "").toLowerCase().includes(searchTerm.toLowerCase())
+      (course.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.description || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by Language
     if (filters.language) {
-      result = result.filter(course => course.language === filters.language);
+      result = result.filter(course => 
+      course.language && course.language.toLowerCase() === filters.language.toLowerCase()
+      );
     }
 
     // Filter by Level
     if (filters.level) {
-      result = result.filter(course => course.level === filters.level);
+      result = result.filter(course => 
+      course.level && course.level.toLowerCase() === filters.level.toLowerCase()
+      );
     }
 
     // Filter by Source 
     if (filters.provider) {
-      // Changed from 'provider' to 'source' to match the object key usually returned
-      result = result.filter(course => course.provider === filters.provider);
-    }
+      result = result.filter(course => 
+      (course.provider && course.provider.toLowerCase() === filters.provider.toLowerCase()) ||
+      (course.source && course.source.toLowerCase().includes(filters.provider.toLowerCase()))
+    );
+  }
 
     // Filter by Category
     if (filters.category) {
-      result = result.filter(course => course.category === filters.category);
-    }
+      result = result.filter(course => 
+      course.category && course.category.toLowerCase() === filters.category.toLowerCase()
+      );
+  }
 
     setCourses(result);
     setCurrentPage(1);
@@ -189,6 +198,12 @@ const Home = () => {
     );
   }
 
+  // Βρίσκουμε τις μοναδικές τιμές από τα δεδομένα μας
+  const uniqueLanguages = [...new Set(allCourses.map(c => c.language).filter(Boolean))];
+  const uniqueLevels = [...new Set(allCourses.map(c => c.level).filter(Boolean))];
+  const uniqueProviders = [...new Set(allCourses.map(c => c.provider || c.source).filter(Boolean))];
+  const uniqueCategories = [...new Set(allCourses.map(c => c.category).filter(Boolean))];
+
   return (
     <div className="home-container">
       <div className="home-wrapper">
@@ -224,57 +239,36 @@ const Home = () => {
           <div className="filters-section">
             <div className="filter-group">
               <label>Γλώσσα</label>
-              <select
-                value={filters.language}
-                onChange={(e) => handleFilterChange('language', e.target.value)}
-              >
+              <select value={filters.language} onChange={(e) => handleFilterChange('language', e.target.value)}>
                 <option value="">Όλες</option>
-                <option value="gr">Ελληνικά</option>
-                <option value="en">Αγγλικά</option>
-                <option value="sp">Ισπανικά</option>
-                <option value="fr">Γαλλικά</option>
+                {uniqueLanguages.map(lang => <option key={lang} value={lang}>{lang.toUpperCase()}</option>)}
               </select>
             </div>
 
+            {/* Filter Level */}
             <div className="filter-group">
               <label>Επίπεδο</label>
-              <select
-                value={filters.level}
-                onChange={(e) => handleFilterChange('level', e.target.value)}
-              >
+              <select value={filters.level} onChange={(e) => handleFilterChange('level', e.target.value)}>
                 <option value="">Όλα</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
+                {uniqueLevels.map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}
               </select>
             </div>
 
+            {/* Filter Provider */}
             <div className="filter-group">
               <label>Πηγή</label>
-              <select
-                value={filters.provider}
-                onChange={(e) => handleFilterChange('provider', e.target.value)}
-              >
+              <select value={filters.provider} onChange={(e) => handleFilterChange('provider', e.target.value)}>
                 <option value="">Όλες</option>
-                <option value="Coursera">Coursera</option>
-                <option value="Udemy">Udemy</option>
-                <option value="MIT OpenCourseWare">MIT OCW</option>
-                <option value="edX">edX</option>
+                {uniqueProviders.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
 
+            {/* Filter Category */}
             <div className="filter-group">
               <label>Κατηγορία</label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-              >
+              <select value={filters.category} onChange={(e) => handleFilterChange('category', e.target.value)}>
                 <option value="">Όλες</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Web Development">Web Development</option>
-                <option value="Data Science">Data Science</option>
-                <option value="Business">Business</option>
-                <option value="General">General</option>
+                {uniqueCategories.sort().map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
 
