@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const logger = require('./src/middleware/logger');
@@ -6,8 +7,6 @@ const logger = require('./src/middleware/logger');
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
-
-app.use(cors());
 
 //import 
 const connectDB = require('./src/config/db');
@@ -20,6 +19,11 @@ connectDB();
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true                
+}));
 app.use(logger);
 
 // Routes

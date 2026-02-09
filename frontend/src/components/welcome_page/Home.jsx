@@ -13,7 +13,7 @@ const Home = () => {
   const [filters, setFilters] = useState({
     language: '',
     level: '',
-    source: '',
+    provider: '',
     category: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,19 +33,20 @@ const Home = () => {
   
   // 1. Check Authentication
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
-    if (token && userData) {
+    if (userData) {
       setIsAuthenticated(true);
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        setIsAuthenticated(true);
       } catch (error) {
         console.error('Error parsing user data:', error);
+        setIsAuthenticated(false);
       }
     } else {
-        // If not logged in, stop loading so the "Login" hero section shows
+        setIsAuthenticated(false);
         setLoading(false);
     }
   }, []);
@@ -108,15 +109,18 @@ const Home = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/courses');
+      const response = await axios.get('http://localhost:3000/courses', {
+        withCredentials: true 
+      });
       const data = Array.isArray(response.data) ? response.data : (response.data.courses || []);
       setCourses(data);
       setAllCourses(data);
 
-      return data;
     } catch (error) {
       console.error('Error fetching courses:', error);
-
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
     } finally {
       setLoading(false);
     }
@@ -151,12 +155,20 @@ const Home = () => {
     });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+
+      await axios.post('http://localhost:3000/users/signout', {}, { withCredentials: true });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('token'); 
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/login');
+    }
   };
 
   const clearFilters = () => {
@@ -213,9 +225,6 @@ const Home = () => {
             <h1>Καλώς ήρθες, {user?.firstName}! 👋</h1>
             <p className="header-subtitle">Εξερεύνησε μαθήματα από όλο τον κόσμο</p>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Αποσύνδεση
-          </button>
         </div>
 
         {/* Search Section */}

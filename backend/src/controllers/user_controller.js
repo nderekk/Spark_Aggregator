@@ -45,15 +45,25 @@ const signIn = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        const token = jwt.sign(
-            { id: user._id, email: user.email },
-            process.env.JWT_SECRET || 'secret_key',
-            { expiresIn: '1h' }
-        );
+        const payload = { id: user._id, email: user.email ,permissionLevel: user.permissionLevel};
+        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: '7d' });
+
+        res.cookie('token', accessToken, {
+            httpOnly: true,
+            secure: false, 
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
 
         res.json({
-            token,
-            user: { id: user._id, firstName: user.firstName, email: user.email }
+            message: "Logged in successfully",
+            user: { 
+                id: user._id, 
+                firstName: user.firstName, 
+                email: user.email, 
+                permissionLevel: user.permissionLevel 
+            }
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -81,11 +91,24 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const signout = async (req, res) => {
+
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/' 
+    });
+
+    return res.status(200).json({ message: "Αποσυνδεθήκατε με επιτυχία!" });
+};
+
 
 module.exports = {
     getAllUsers,
     signUp,
     signIn,
     updateUser,
-    deleteUser
+    deleteUser,
+    signout
 };

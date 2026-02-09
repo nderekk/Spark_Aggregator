@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; 
+
+    const token = req.cookies.token;
 
     if (!token) {
         return res.status(401).json({ message: "Access Denied: No Token Provided" });
@@ -13,7 +13,7 @@ const verifyToken = (req, res, next) => {
         req.user = verified; 
         next();
     } catch (error) {
-        res.status(403).json({ message: "Invalid or Expired Token" });
+        res.status(401).json({ message: "Token expired or invalid" });
     }
 };
 
