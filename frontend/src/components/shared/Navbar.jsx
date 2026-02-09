@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import logoImg from '../../assets/ceid.jpg'; 
+import axios from 'axios';
 
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Check if user is logged in
+    const user = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
+    setIsAuthenticated(!!token || !!user);
+  }, [location]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await axios.post('http://localhost:3000/users/signout', {}, { withCredentials: true });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      navigate('/login');
+    }
   };
 
   return (

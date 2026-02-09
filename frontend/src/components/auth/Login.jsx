@@ -18,39 +18,36 @@ const Login = () => {
     try {
       console.log('Attempting login with:', { email }); // Debug log
       
-      // ✅ Χρησιμοποιούμε το σωστό endpoint: /users/signin
       const response = await axios.post('http://localhost:3000/users/signin', { 
         email, 
         password 
+      }, {
+        withCredentials: true // Εξασφαλίζει ότι τα cookies θα σταλούν με το request
       });
       
-      console.log('Login response:', response.data); // Debug log
+      console.log('Login response:', response.data); 
       
       // Αποθήκευση του JWT Token
-      if (response.data.token) {
+      if (response.data && response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        
-        // Αποθήκευση user info
-        if (response.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
-        
-        console.log('Token saved successfully'); // Debug log
-        navigate('/'); // Ανακατεύθυνση στην κεντρική σελίδα
-      } else {
-        setError('Δεν λήφθηκε token από τον server');
+        } else {
+        localStorage.setItem('token', 'is_logged_in'); 
+    }
+        navigate('/');
+      }else {
+        setError('Λάθος email ή κωδικός πρόσβασης');
       }
     } catch (error) {
-      console.error("Login Error:", error); // Debug log
+      console.error("Login Error:", error); 
       
       if (error.response) {
-        // Το backend απάντησε με error status
         setError(error.response.data.message || 'Λάθος email ή κωδικός πρόσβασης');
       } else if (error.request) {
-        // Το request έγινε αλλά δεν λήφθηκε απάντηση
+
         setError('Δεν μπορώ να επικοινωνήσω με τον server. Βεβαιωθείτε ότι τρέχει στο port 3000.');
       } else {
-        // Κάτι άλλο πήγε στραβά
         setError('Προέκυψε σφάλμα. Παρακαλώ δοκιμάστε ξανά.');
       }
     } finally {

@@ -9,26 +9,26 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
       navigate('/login');
       return;
     }
+    
     fetchAnalytics();
-  }, []);
+  }, [navigate]);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:3000/analytics/stats', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        withCredentials: true 
       });
       setStats(response.data);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        navigate('/');
+      }
       setStats({
         totalCourses: 0,
         bySource: [],
@@ -81,7 +81,7 @@ const Analytics = () => {
             <div className="stat-icon">📚</div>
             <div className="stat-content">
               <h3>Σύνολο Μαθημάτων</h3>
-              <p className="stat-number">{stats.totalCourses.toLocaleString()}</p>
+              <p className="stat-number">{stats?.totalCourses?.toLocaleString() || 0}</p>
             </div>
           </div>
 
