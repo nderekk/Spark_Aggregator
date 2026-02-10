@@ -35,7 +35,6 @@ const getAllCourses = async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
-
         const count = await Course.countDocuments(query);
 
         res.json({
@@ -54,6 +53,7 @@ const getCourse = async (req, res) => {
         const { id } = req.params;
 
         const course = await Course.findById(id);
+        if (!course) return res.status(404).json({ message: "Course not found" });
 
         res.json({
             course
@@ -174,7 +174,6 @@ const deleteCourse = async (req, res) => {
     }   
 
 };
-
 
 
 module.exports = {

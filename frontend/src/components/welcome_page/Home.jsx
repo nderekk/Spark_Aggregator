@@ -310,9 +310,19 @@ const Home = () => {
               <div className="courses-grid">
                 {paginatedCourses.map((course) => (
                   <div key={course._id} className="course-card">
-                    <div className="course-header">
-                      <span className="course-level">{course.level}</span>
-                      <span className="course-source">{course.source}</span>
+                    {/* TOP BADGE AREA */}
+                    <div className="course-card-top">
+                      <div className="badge-row">
+                        <span className="badge badge-level">{course.level || 'General'}</span>
+                        
+                        {/* THE ML TOPIC LABEL */}
+                        {course.cluster_label && (
+                          <span className="badge badge-topic">
+                            🏷️ {course.cluster_label}
+                          </span>
+                        )}
+                      </div>
+                      <span className="course-source-tag">{course.source || 'Online'}</span>
                     </div>
                     <h3 className="course-title">{course.title}</h3>
                     <p className="course-description">{course.description}</p>

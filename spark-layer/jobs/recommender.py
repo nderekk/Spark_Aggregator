@@ -12,6 +12,9 @@ spark = SparkSession.builder \
   .config("spark.executor.heartbeatInterval", "100s") \
   .config("spark.rpc.message.maxSize", "1024") \
   .config("spark.mongodb.read.connection.uri", atlas_uri) \
+  .config("spark.mongodb.read.heartbeat.frequency.ms", "10000") \
+  .config("spark.mongodb.write.heartbeat.frequency.ms", "10000") \
+  .config("spark.mongodb.read.maxConnectionIdleTimeMS", "10000") \
   .config("spark.mongodb.read.database", "test") \
   .config("spark.mongodb.read.collection", "courses") \
   .config("spark.cleaner.referenceTracking.cleanCheckpoints", "true") \
@@ -22,12 +25,14 @@ spark = SparkSession.builder \
   .config("spark.driver.bindAddress", "127.0.0.1") \
   .config("spark.kryoserializer.buffer.max", "2000M") \
   .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
+  .master("local[*]") \
   .getOrCreate()
   
 raw_df = spark.read.format("mongodb")\
   .option("database", "test") \
   .option("collection", "courses") \
-  .load()
+  .load().repartition(12)
+  
 raw_df.persist()
 
 print(f"Total rows in raw_df: {raw_df.count()}")
@@ -38,6 +43,7 @@ cleaned_df = raw_df.select(
   col("_id").cast("string").alias("course_id"),
   col("title"),
   col("description"),
+  col("keywords"),
   col("keywords"),
   concat_ws(" ", 
     col("title"), 
@@ -161,11 +167,13 @@ def get_lda_topics(vectorized_df, cv_model, num_topics=5):
   #   print(f"topic {i}: {topic}")
 
   lda_df = lda_model.transform(vectorized_df)
-  lda_df.select(fun.col('title'), fun.col('topicDistribution')).\
-    show(2, vertical=True, truncate=False)
+  # lda_df.select(fun.col('title'), fun.col('topicDistribution')).\
+  #   show(2, vertical=True, truncate=False)
 
   from pyspark.ml.functions import vector_to_array
-  from pyspark.sql.functions import expr
+  from pyspark.sql.functions import expr, create_map
+  from itertools import chain
+
 
   # 1. Convert the vector to an array first (this makes it 'visible' to SQL)
   lda_df = lda_df.withColumn("topic_array", vector_to_array(col("topicDistribution")))
@@ -173,14 +181,28 @@ def get_lda_topics(vectorized_df, cv_model, num_topics=5):
   # 2. Use a SQL expression to find the index of the max value in that array
   # array_position is 1-based in Spark SQL
   lda_df = lda_df.withColumn("topic_index", 
-      expr("array_position(topic_array, array_max(topic_array))")
+    expr("array_position(topic_array, array_max(topic_array))")
   )
 
+  # 1. Create a dictionary mapping: Topic Index -> Top 3 Words
+  # 'topics' is your list of words for each topic index
+  mapping = {i + 1: ", ".join(words[:3]).title() for i, words in enumerate(topics)}
+
+  # 2. Convert that dictionary into a Spark Map expression
+  # This avoids a join and is extremely fast for small metadata like this
+  mapping_expr = create_map([lit(x) for x in chain(*mapping.items())])
+
+  # 3. Apply the label in ONE SINGLE STEP (no loop!)
+  lda_df = lda_df.withColumn("topic_label", mapping_expr[col("topic_index")])
+
+  # Optional: Handle any missing labels (if topic_index is null/invalid)
+  lda_df = lda_df.fillna({"topic_label": "General"})
+    
   # 3. Clean up the temporary array column
   lda_df = lda_df.drop("topic_array")
 
   print("Course titles with their assigned topic index:")
-  lda_df.select('title', 'topic_index').show(truncate=False)
+  lda_df.select('title', 'topic_index', 'topic_label').show(truncate=False)
   
   return lda_df
 
@@ -292,7 +314,7 @@ def run_scenario_exact_knn(vectorized_df, k=5):
   knn_tfidf_df = exact_knn(gt_results)
   return knn_tfidf_df
 
-def export_to_mongodb(df, collection_name="course_recommendations"):
+def export_recommendations_to_mongodv(df, collection_name="course_recommendations"):
   """Explicitly writes to Atlas, bypassing session defaults."""
     
   # Ensure we are working with fresh data
@@ -320,31 +342,76 @@ def export_to_mongodb(df, collection_name="course_recommendations"):
     .option("collection", collection_name) \
     .save()
 
-  print("SUCCESS: Check your Atlas 'test' database now.")
+  print("SUCCESS: Exported recommendations to Atlas test database.")
+
+# def export_clusters_to_mongodb(df, collection_name="course_clusters"):
+#   """Writes course clusters to MongoDB."""
+#   df.cache()
+#   count = df.count()
+#   print(f"DEBUG: Attempting to write {count} cluster records to {collection_name}...")
+
+#   if count == 0:
+#     print("ABORT: DataFrame is empty. Check your LDA topic modeling!")
+#     return
+
+#   target_uri = atlas_uri.replace("/?", f"/test?") # Force it into the 'test' database
+
+#   df.select(
+#     col("course_id"),
+#     col("topic_index")
+#   ).write \
+#   .format("mongodb") \
+#   .mode("overwrite") \
+#   .option("connection.uri", target_uri) \
+#   .option("database", "test") \
+#   .option("collection", collection_name) \
+#   .save()
+
+#   print("SUCCESS: Clusters exported to Atlas test database.")
+
+def update_courses_with_clusterIds(raw_df, lda_df):
+  from pyspark.sql.functions import coalesce
+  
+  course_clusters = lda_df.select(
+    col("course_id").alias("_id"),
+    col("topic_index").alias("cluster_id"),
+    col("topic_label").alias("cluster_label")
+  )
+      
+  target_uri = atlas_uri.replace("/?", f"/test?")
+  
+  course_clusters.write \
+    .format("mongodb") \
+    .mode("append") \
+    .option("connection.uri", target_uri) \
+    .option("database", "test") \
+    .option("collection", "courses") \
+    .option("idFieldList", "_id") \
+    .option("operationType", "update") \
+    .save()
+  
 
 vectorized_df, cv_model = clean_and_prepare_features(tokens_df)
 print(f"Total rows in vectorized_df: {vectorized_df.count()}")
 vectorized_df.show(5)
 
 # Scenario A: Exact TF-IDF (Ground Truth)
-# results = run_scenario_exact_knn(vectorized_df)
+# reccomendations = run_scenario_exact_knn(vectorized_df)
 
 # Scenario B: Fast TF-IDF (MinHash LSH)
-# results = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
+# reccomendations = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
+# print(f"Total recommendations generated: {reccomendations.count()}")
+# reccomendations.show(20, truncate=False)
 
 # Scenario C: Thematic LDA (BRP LSH)
-results = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=10)
+# reccomendations = run_scenario_lda_knn(vectorized_df, cv_model, k=5, upper_threshold=0.2, num_topics=10)
 
-results.show(20, truncate=False)
+clusters = get_lda_topics(vectorized_df, cv_model, num_topics=40)
+clusters.persist()
+clusters.describe().show()
+print(f"Total clusters generated: {clusters.count()}")
+# clusters.show(20, truncate=False)
 
-export_to_mongodb(results, collection_name="course_recommendations")
+update_courses_with_clusterIds(raw_df, clusters)
 
-# write results do mongodb
-# recommendations.write \
-#     .format("mongodb") \
-#     .mode("overwrite") \
-#     .option("database", "test") \
-#     .option("collection", "ldalsh_course_recommendations") \
-#     .save()
-
-# print("Process Complete: LSH recommendations exported to Atlas.")
+# export_recommendations_to_mongodv(reccomendations, collection_name="course_recommendations")

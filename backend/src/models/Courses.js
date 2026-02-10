@@ -12,6 +12,8 @@ const courseSchema = new mongoose.Schema({
     source: { type: String }, 
     provider: { type: String },
     url: { type: String },
+    cluster_id: { type: Number, default: -1 },
+    cluster_label: { type: String, default: "" },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);
