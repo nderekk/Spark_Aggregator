@@ -369,9 +369,7 @@ def export_recommendations_to_mongodv(df, collection_name="course_recommendation
 
 #   print("SUCCESS: Clusters exported to Atlas test database.")
 
-def update_courses_with_clusterIds(raw_df, lda_df):
-  from pyspark.sql.functions import coalesce
-  
+def update_courses_with_clusterIds(lda_df):
   course_clusters = lda_df.select(
     col("course_id").alias("_id"),
     col("topic_index").alias("cluster_id"),
@@ -412,6 +410,6 @@ clusters.describe().show()
 print(f"Total clusters generated: {clusters.count()}")
 # clusters.show(20, truncate=False)
 
-update_courses_with_clusterIds(raw_df, clusters)
+update_courses_with_clusterIds(clusters)
 
 # export_recommendations_to_mongodv(reccomendations, collection_name="course_recommendations")
