@@ -9,10 +9,12 @@ const CourseDetails = () => {
   const [course, setCourse] = useState(null);
   const [similarCourses, setSimilarCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     fetchCourseDetails();
     fetchSimilarCourses();
+    checkIfFavorite();
   }, [id]);
 
   const fetchCourseDetails = async () => {
@@ -34,6 +36,35 @@ const CourseDetails = () => {
       setSimilarCourses(response.data);
     } catch (error) {
       console.error('Error fetching similar courses:', error);
+    }
+  };
+
+  const checkIfFavorite = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await axios.get(`http://localhost:3000/courses/favorites`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const found = res.data.favoriteCourses.some(fav => fav._id === id);
+      setIsFavorite(found);
+    } catch (err) {
+      console.error("Could not fetch favorites", err);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert("Συνδεθείτε για να αποθηκεύσετε το μάθημα");
+
+    try {
+      await axios.post(`http://localhost:3000/courses/${id}/favorites`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsFavorite(true);
+    } catch (err) {
+      console.error("Error saving favorite", err);
     }
   };
 
@@ -83,7 +114,17 @@ const CourseDetails = () => {
                 <span className="badge badge-source">{course.source}</span>
                 <span className="badge badge-language">{course.language}</span>
               </div>
-              <h1 className="course-main-title">{course.title}</h1>
+    
+              <div className="title-wrapper">
+                <h1 className="course-main-title">{course.title}</h1>
+                <button 
+                  className={`fav-button ${isFavorite ? 'is-fav' : ''}`} 
+                  onClick={toggleFavorite}
+                >
+                  {isFavorite ? '❤' : '+'} 
+                </button>
+              </div>
+
               <p className="course-subtitle">{course.description}</p>
               
               {course.instructor && (

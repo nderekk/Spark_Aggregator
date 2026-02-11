@@ -1,4 +1,5 @@
 const Course = require('../models/Courses');
+const User = require('../models/Users');
 const Recommendation = require('../models/Recommendation');
 const mongoose = require('mongoose');
 
@@ -175,6 +176,55 @@ const deleteCourse = async (req, res) => {
 
 };
 
+const postFavoriteCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            { $addToSet: { favoriteCourses: id } }, // Adds course ID if it's not already there
+            { new: true } // Returns the updated user
+        ).populate('favoriteCourses'); // Fills the array with full course data
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            favoriteCourses: updatedUser.favoriteCourses
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add course to favorites.' });
+    }   
+
+};
+
+const getFavoriteCourses = async (req, res) => {
+    try {
+        const userID = req.userID;
+
+        const user = await User.findById(userID)
+            .populate({
+                path: 'favoriteCourses',
+                model: 'Course'
+            })
+            .select('favoriteCourses');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            count: user.favoriteCourses.length,
+            favoriteCourses: user.favoriteCourses
+        });
+    } catch (error) {
+        console.error("Error fetching favorite courses:", error);
+        res.status(500).json({ error: 'Failed to fetch favorite courses.' });
+    }
+
+};
 
 module.exports = {
     getAllCourses,
@@ -184,5 +234,7 @@ module.exports = {
     createCourse,
     updateCourse,
     deleteCourse,
-    getCourse
+    getCourse,
+    postFavoriteCourse,
+    getFavoriteCourses
 };
