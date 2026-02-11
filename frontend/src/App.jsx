@@ -6,6 +6,7 @@ import SignUp from './components/auth/SignUp';
 import Home from './components/welcome_page/Home';
 import CourseDetails from './pages/CourseDetails';
 import Analytics from './pages/Analytics';
+import Favorites from './pages/Favorites';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/courses/:id" element={<CourseDetails />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/favorites" element={<Favorites />} />
         </Routes>
       </div>
     </Router>
