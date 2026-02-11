@@ -4,11 +4,13 @@ import axios from 'axios';
 import './AuthStyles.css';
 
 const SignUp = () => {
+  const [adminKey, setAdminKey] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'user'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,23 +18,21 @@ const SignUp = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     // Validation
     if (formData.password.length < 6) {
       setError('Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες');
-      setLoading(false);
+      setLoading(<false></false>);
       return;
     }
 
     try {
-      console.log('Attempting registration with:', formData); // Debug log
       
-      // ✅ Χρησιμοποιούμε το σωστό endpoint: /users/signup
-      const response = await axios.post('http://localhost:3000/users/signup', formData);
+      const response = await axios.post('http://localhost:3000/users/signup', {...formData, adminCode: adminKey});
       
-      console.log('Registration response:', response.data); // Debug log
+      console.log('Registration response:', response.data); 
       
       if (response.status === 201 || response.status === 200) {
         // Success! Redirect to login
@@ -43,7 +43,6 @@ const SignUp = () => {
       console.error("Registration Error:", error); // Debug log
       
       if (error.response) {
-        // Το backend απάντησε με error status
         const errorMsg = error.response.data.message || error.response.data.error;
         
         if (error.response.status === 400) {
@@ -135,6 +134,34 @@ const SignUp = () => {
               Τουλάχιστον 6 χαρακτήρες
             </small>
           </div>
+          <div className="form-group">
+            <label>Τύπος Χρήστη</label>
+            <select 
+              className="auth-select"
+              value={formData.role}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              disabled={loading}
+            >
+              <option value="user">Απλός Χρήστης</option>
+              <option value="admin">Διαχειριστής (Admin)</option>
+            </select>
+          </div>
+          {formData.role === 'admin' && (
+          <div className="form-group animate-fade-in">
+            <label>Admin Secret Key</label>
+            <input 
+              type="password" 
+              placeholder="Εισάγετε τον μυστικό κωδικό"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              required={formData.role === 'admin'}
+              disabled={loading}
+            />
+            <small style={{ color: '#dc2626', fontSize: '0.8rem' }}>
+              Απαιτείται ειδικός κωδικός για εγγραφή διαχειριστή.
+            </small>
+          </div>
+        )}
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Δημιουργία...' : 'Δημιουργία Λογαριασμού'}

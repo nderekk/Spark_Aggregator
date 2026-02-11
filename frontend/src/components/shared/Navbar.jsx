@@ -6,16 +6,29 @@ import axios from 'axios';
 
 const Navbar = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Check if user is logged in
-    const user = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token || !!user);
-  }, [location]);
 
+    const userString = localStorage.getItem('user');
+   
+    
+    if (userString) {
+      try {
+        const user = JSON.parse(userString); 
+        setIsAuthenticated(true);
+        setIsAdmin(user.role === 'admin');
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setIsAuthenticated(false);
+      }
+    } else {
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+    }
+  }, [location]);
   const handleLogout = async () => {
     try {
       await axios.post('http://localhost:3000/users/signout', {}, { withCredentials: true });
@@ -25,6 +38,7 @@ const Navbar = () => {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       setIsAuthenticated(false);
+      setIsAdmin(false);
       navigate('/login');
     }
   };
@@ -41,6 +55,11 @@ const Navbar = () => {
       <div className="nav-right">
         {isAuthenticated ? (
           <>
+          {isAdmin && (
+              <Link to="/admin-dashboard" className="nav-link-login admin-special-link">
+                ⚙️ Admin Panel
+              </Link>
+            )}
             <Link to="/analytics" className="nav-link-login">
               Analytics
             </Link>
