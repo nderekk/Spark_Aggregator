@@ -315,9 +315,9 @@ const Home = () => {
                         <span className="badge badge-level">{course.level || 'General'}</span>
                         
                         {/* THE ML TOPIC LABEL */}
-                        {course.cluster_label && (
+                        {course.cluster_id && (
                           <span className="badge badge-topic">
-                            🏷️ {course.cluster_label}
+                            🏷️ {course.cluster_label == [] ? "No Topic" : course.cluster_label}
                           </span>
                         )}
                       </div>
