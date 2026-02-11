@@ -1,4 +1,5 @@
 const Course = require('../models/Courses');
+const { spawn } = require('child_process');
 
 const getStats = async (req, res) => {
     try {
@@ -118,6 +119,54 @@ const getStats = async (req, res) => {
     }
 };
 
+
+const runSparkJob = async (req, res) => {
+    // 1. Χρήση Forward Slashes (/) - Η Node τα μετατρέπει αυτόματα σε Windows format
+    // και είναι πιο ασφαλή για να μη μπερδεύονται τα escapes.
+    const scriptPath = "C:/Users/ch1n1/uni_projects/apokentromena/.github/Spark_Aggregator/spark-layer/jobs/recommender.py";
+
+    console.log(`🚀 Attempting to run: ${scriptPath}`);
+
+    // 2. Δοκιμάζουμε την εντολή 'python'. Αν δεν δουλεύει, δοκίμασε 'py' ή 'python3'
+    const pythonProcess = spawn('python', [scriptPath], {
+        shell: true // Απαραίτητο για Windows για να βρει το PATH
+    });
+
+    let output = "";
+    let errorOutput = "";
+
+    pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        console.error("Spark Log:", data.toString());
+    });
+
+    // 3. Βάζουμε ένα Timeout. Αν μετά από 2 λεπτά δεν απαντήσει, κλείσε το.
+    const timeout = setTimeout(() => {
+        pythonProcess.kill();
+        if (!res.headersSent) {
+            res.status(408).json({ message: "Spark Job Timeout - Το script αργεί πολύ" });
+        }
+    }, 120000);
+
+    pythonProcess.on('close', (code) => {
+        clearTimeout(timeout);
+        if (code !== 0) {
+            console.error(`Process exited with code ${code}`);
+            if (!res.headersSent) {
+                return res.status(500).json({ message: "Spark Error", error: errorOutput });
+            }
+        }
+        if (!res.headersSent) {
+            res.status(200).json({ message: "Success", details: output });
+        }
+    });
+};
+
 module.exports = {
-    getStats
+    getStats,
+    runSparkJob
 };

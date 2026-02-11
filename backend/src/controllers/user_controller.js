@@ -1,6 +1,8 @@
 const User = require('../models/Users');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+dotenv = require('dotenv');
+dotenv.config();
 
 
 const getAllUsers = async (req, res) => {
@@ -14,18 +16,31 @@ const getAllUsers = async (req, res) => {
 
 const signUp = async (req, res) => {
     try {
-        const { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password , role, adminCode} = req.body;
+
+        const adminKey = process.env.ADMIN_KEY;
+
 
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ message: "User already exists" });
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        let finalRole = 'user'; 
+        if (role === 'admin') {
+            if (adminCode === adminKey) {
+                finalRole = 'admin';
+            } else {
+                return res.status(403).json({ message: "Λάθος κωδικός έγκρισης διαχειριστή!" });
+            }
+        }
+
         const newUser = new User({
             firstName,
             lastName,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            role: finalRole,
         });
 
         await newUser.save();
@@ -45,7 +60,7 @@ const signIn = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-        const payload = { id: user._id, email: user.email ,permissionLevel: user.permissionLevel};
+        const payload = { id: user._id, email: user.email ,role: user.role, permissionLevel: user.permissionLevel};
         const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
         const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: '7d' });
 
@@ -55,13 +70,19 @@ const signIn = async (req, res) => {
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false, 
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
         res.json({
             message: "Logged in successfully",
             user: { 
                 id: user._id, 
                 firstName: user.firstName, 
                 email: user.email, 
+                role: user.role,
                 permissionLevel: user.permissionLevel 
             }
         });

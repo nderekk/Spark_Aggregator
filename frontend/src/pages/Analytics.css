@@ -417,3 +417,104 @@
     text-align: center;
   }
 }
+
+/* --- Admin Quick Actions --- */
+.admin-quick-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.action-btn.sync {
+  background: #1a1a1a;
+  color: white;
+}
+
+.action-btn.refresh {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.action-btn:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+/* --- Data Health Table --- */
+.data-health-section {
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+}
+
+.health-table-wrapper {
+  background: white;
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+.health-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.health-table th {
+  padding: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+  color: #6b7280;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.health-table td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-indicator.online {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.status-indicator.online::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* Mobile Fix for Health Table */
+@media (max-width: 768px) {
+  .admin-quick-actions {
+    flex-direction: column;
+  }
+}

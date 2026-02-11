@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Home.css';
@@ -19,6 +19,11 @@ const Home = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(21);
   const navigate = useNavigate();
+
+  const uniqueLanguages = useMemo(() => [...new Set(allCourses.map(c => c.language).filter(Boolean))], [allCourses]);
+  const uniqueLevels = useMemo(() => [...new Set(allCourses.map(c => c.level).filter(Boolean))], [allCourses]);
+  const uniqueProviders = useMemo(() => [...new Set(allCourses.map(c => c.provider || c.source).filter(Boolean))], [allCourses]);
+  const uniqueCategories = useMemo(() => [...new Set(allCourses.map(c => c.category).filter(Boolean))], [allCourses]);
 
     
   const totalPages = Math.ceil(courses.length / itemsPerPage);
@@ -175,7 +180,7 @@ const Home = () => {
     setFilters({
       language: '',
       level: '',
-      source: '',
+      provider: '',
       category: ''
     });
     setSearchTerm('');
@@ -209,12 +214,6 @@ const Home = () => {
       </div>
     );
   }
-
-  // Βρίσκουμε τις μοναδικές τιμές από τα δεδομένα μας
-  const uniqueLanguages = [...new Set(allCourses.map(c => c.language).filter(Boolean))];
-  const uniqueLevels = [...new Set(allCourses.map(c => c.level).filter(Boolean))];
-  const uniqueProviders = [...new Set(allCourses.map(c => c.provider || c.source).filter(Boolean))];
-  const uniqueCategories = [...new Set(allCourses.map(c => c.category).filter(Boolean))];
 
   return (
     <div className="home-container">
