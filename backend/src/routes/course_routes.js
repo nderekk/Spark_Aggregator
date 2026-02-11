@@ -9,7 +9,7 @@ router.get('/:id',  courseController.getCourse);
 router.get('/:id/similar', courseController.getSimilarCourses); // thema me to token
 router.get('/sync/:source', verifyToken, courseController.syncSource);
 router.post('/:id/favorites',  verifyToken, courseController.postFavoriteCourse);
-router.delete('/:id/favorites',  verifyToken, courseController.postFavoriteCourse);
+router.delete('/:id/favorites',  verifyToken, courseController.deleteFavoriteCourse);
 
 
 router.post('/', verifyToken,courseController.createCourse);

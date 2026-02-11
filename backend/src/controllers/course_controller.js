@@ -200,6 +200,30 @@ const postFavoriteCourse = async (req, res) => {
 
 };
 
+const deleteFavoriteCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            { $pull: { favoriteCourses: id } }, // Removes the course ID from the array
+            { new: true }
+        ).populate('favoriteCourses');
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            message: 'Course removed from favorites.',
+            favoriteCourses: updatedUser.favoriteCourses
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to remove course from favorites.' });
+    }
+};
+
 const getFavoriteCourses = async (req, res) => {
     try {
         const userID = req.userID;
@@ -226,6 +250,8 @@ const getFavoriteCourses = async (req, res) => {
 
 };
 
+
+
 module.exports = {
     getAllCourses,
     getCourseById : getCourse,
@@ -236,5 +262,6 @@ module.exports = {
     deleteCourse,
     getCourse,
     postFavoriteCourse,
-    getFavoriteCourses
+    getFavoriteCourses,
+    deleteFavoriteCourse
 };

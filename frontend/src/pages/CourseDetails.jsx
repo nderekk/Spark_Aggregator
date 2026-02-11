@@ -56,15 +56,26 @@ const CourseDetails = () => {
 
   const toggleFavorite = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return alert("Συνδεθείτε για να αποθηκεύσετε το μάθημα");
+    if (!token) {
+      alert("Συνδεθείτε για να αποθηκεύσετε το μάθημα");
+      return;
+    }
 
     try {
-      await axios.post(`http://localhost:3000/courses/${id}/favorites`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setIsFavorite(true);
+      if (isFavorite) {
+        await axios.delete(`http://localhost:3000/courses/${id}/favorites`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsFavorite(false);
+      } else {
+        await axios.post(`http://localhost:3000/courses/${id}/favorites`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsFavorite(true);
+      }
     } catch (err) {
-      console.error("Error saving favorite", err);
+      console.error("Error toggling favorite status", err);
+      alert("Προέκυψε σφάλμα κατά την ενημέρωση των αγαπημένων.");
     }
   };
 
