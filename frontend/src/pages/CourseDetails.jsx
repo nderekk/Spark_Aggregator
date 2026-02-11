@@ -124,16 +124,16 @@ const CourseDetails = () => {
                 <span className="badge badge-level">{course.level}</span>
                 <span className="badge badge-source">{course.source}</span>
                 <span className="badge badge-language">{course.language}</span>
-              </div>
-    
-              <div className="title-wrapper">
-                <h1 className="course-main-title">{course.title}</h1>
                 <button 
                   className={`fav-button ${isFavorite ? 'is-fav' : ''}`} 
                   onClick={toggleFavorite}
                 >
                   {isFavorite ? '❤' : '+'} 
                 </button>
+              </div>
+    
+              <div className="title-wrapper">
+                <h1 className="course-main-title">{course.title}</h1>
               </div>
 
               <p className="course-subtitle">{course.description}</p>
