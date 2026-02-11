@@ -8,7 +8,7 @@ def get_lda_topics(vectorized_df, cv_model, num_topics=38, max_iter=200):
 
   lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="features", optimizer='online')
   lda_model = lda.fit(vectorized_df)
-  vectorized_df.persist()
+  # vectorized_df.persist()
 
   # the lower the perplexity, the better the model is at predicting the sample
   lp = lda_model.logPerplexity(vectorized_df)

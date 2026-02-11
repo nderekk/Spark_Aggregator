@@ -31,6 +31,7 @@ def get_spark_session():
     .config("spark.scheduler.listenerbus.eventqueue.capacity", "20000") \
     .config("spark.ui.retainedJobs", "50") \
     .config("spark.ui.retainedStages", "50") \
+    .config("spark.python.worker.reuse", "false") \
     .master("local[*]") \
     .getOrCreate()
   

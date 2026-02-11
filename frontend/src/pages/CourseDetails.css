@@ -95,6 +95,11 @@
   color: #065f46;
 }
 
+.badge-cluster {
+  background: #b3e8a7;
+  color: #02483d;
+}
+
 .course-main-title {
   font-size: 2.5rem;
   font-weight: 700;

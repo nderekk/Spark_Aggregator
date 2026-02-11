@@ -82,6 +82,9 @@ const CourseDetails = () => {
                 <span className="badge badge-level">{course.level}</span>
                 <span className="badge badge-source">{course.source}</span>
                 <span className="badge badge-language">{course.language}</span>
+                {course.cluster_id && (
+                  <span className="badge badge-cluster">🏷️ {course.cluster_label == [] ? "No Topic" : course.cluster_label}</span>
+                )}
               </div>
               <h1 className="course-main-title">{course.title}</h1>
               <p className="course-subtitle">{course.description}</p>
@@ -179,7 +182,7 @@ const CourseDetails = () => {
               <div className="similar-courses-list">
                 {similarCourses.length > 0 ? (
                   similarCourses.map((similar) => {
-                    const matchPercentage = similar.score ? Math.round((1 - similar.score) * 100) : null;
+                    const matchPercentage = similar.score ? Math.round((similar.score) * 100) : null;
 
                     return (
                       <div

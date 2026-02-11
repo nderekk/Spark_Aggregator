@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, concat_ws, length, when, lit, array_join, size
+from pyspark.sql.functions import col, concat_ws, length, when, lit, array_join, size, struct, trim
 import random
 from pyspark.ml.clustering import LDA
 from utils.nlp_pipeline import get_nlp_pipeline, clean_and_prepare_features
@@ -36,25 +36,28 @@ def random_search_lda(vectorized_df, num_trials=10):
 
 def update_courses_with_clusterIds(lda_df):
   course_clusters = lda_df.select(
-    col("course_id").alias("_id"),
+    col("course_id").alias("externalId"),
     col("topic_index").alias("cluster_id"),
     col("topic_label").alias("cluster_label")
   )
   
-  print(f"Type of course_clusters['_id']: {type(course_clusters.select('_id').first())}")
-      
+  course_clusters.printSchema()
+  
   target_uri = atlas_uri.replace("/?", f"/test?")
   
+  print(f'Writting {course_clusters.count()} into Database...')
   course_clusters.write \
     .format("mongodb") \
     .mode("append") \
     .option("connection.uri", target_uri) \
     .option("database", "test") \
     .option("collection", "courses") \
-    .option("idFieldList", "_id") \
+    .option("idFieldList", "externalId") \
     .option("operationType", "update") \
-    .option("upsertDocument", "true") \
+    .option("upsertDocument", "false") \
     .save()
+    
+  print("SUCCESS: Cluster IDs updated.")
     
 spark = get_spark_session()
 
@@ -63,16 +66,18 @@ raw_data = spark.read.format("mongodb")\
   .option("collection", "courses") \
   .load().repartition(12)
   
+print("Data read")
+  
 cleaned_df = raw_data.select(
-  col("_id").alias("course_id"),
+  col("externalId").alias("course_id"),
   col("title"),
   col("description"),
   col("keywords"),
   concat_ws(" ", 
-    col("title"), 
+    col("title"), col("title"), col("title"), 
     when(col("description") != "No description available", col("description"))
     .otherwise(lit("")),
-    array_join(col("keywords"), " ")
+    array_join(col("keywords"), " "), array_join(col("keywords"), " "), array_join(col("keywords"), " ")
   ).alias("text_content")
 )
 
@@ -80,12 +85,14 @@ nlp_pipeline = get_nlp_pipeline(cleaned_df)
 nlp_model = nlp_pipeline.fit(cleaned_df)
 processed_df = nlp_model.transform(cleaned_df)
 
+# processed_df = processed_df.filter(size(col("tokens")) >= 35)
+
 tokens_df = processed_df.select("course_id", "title", "tokens")
 
 vectorized_df, cv_model = clean_and_prepare_features(tokens_df)
 print(f"DF Rows: {vectorized_df.count()}")
     
-clusters = get_lda_topics(vectorized_df, cv_model, num_topics=38, max_iter=200)
+clusters = get_lda_topics(vectorized_df, cv_model, num_topics=15, max_iter=200)
 clusters.describe().show()
 print(f"Total clusters generated: {clusters.count()}")
 clusters.show(20, truncate=True)
