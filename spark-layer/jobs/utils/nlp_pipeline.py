@@ -79,7 +79,8 @@ def get_nlp_pipeline(cleaned_df):
 from pyspark.ml.feature import CountVectorizer, IDF
 from pyspark.sql import functions as fun
 from pyspark.ml.functions import vector_to_array
-from pyspark.sql.functions import col, expr
+from pyspark.sql.functions import col, expr, udf
+from pyspark.sql.types import BooleanType
 
 
 def clean_and_prepare_features(processed_df):
@@ -87,7 +88,7 @@ def clean_and_prepare_features(processed_df):
   # filter out 0 size token arrays to avoid issues in lsh
   valid_tokens_df = processed_df.filter(fun.size(fun.col("tokens")) > 0)
     
-  cv = CountVectorizer(inputCol="tokens", outputCol="raw_features", minDF=10, maxDF=0.6, vocabSize=20000)
+  cv = CountVectorizer(inputCol="tokens", outputCol="raw_features", minDF=0, maxDF=0.6, vocabSize=20000)
   cv_model = cv.fit(valid_tokens_df)
   vectorized_tokens = cv_model.transform(valid_tokens_df)
 
@@ -96,9 +97,16 @@ def clean_and_prepare_features(processed_df):
   
 # 3. CRITICAL: Filter out courses that became "empty" vectors after TF-IDF
   # We use vector_to_array to check if there are any non-zero values
-  final_vectorized_df = idf_model.transform(vectorized_tokens) \
-    .withColumn("vector_array", vector_to_array(col("features"))) \
-    .filter(expr("exists(vector_array, x -> x > 0)")) \
-    .drop("vector_array", "raw_features")
+  final_vectorized_df = idf_model.transform(vectorized_tokens).drop("raw_features")
+  
+  # @udf(returnType=BooleanType())
+  # def has_active_features(v):
+  #   try:
+  #     # Check if the vector actually has any non-zero indices
+  #     return v.numNonzeros() > 0
+  #   except:
+  #     return False
+    
+  # final_vectorized_df = final_vectorized_df.drop("raw_features")
     
   return final_vectorized_df, cv_model

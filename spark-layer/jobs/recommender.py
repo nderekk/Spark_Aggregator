@@ -51,10 +51,10 @@ def run_scenario_exact_knn(vectorized_df, k=5):
   knn_tfidf_df = exact_knn(gt_results)
   return knn_tfidf_df
 
-def run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4):
+def run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.25):
   from pyspark.ml.feature import MinHashLSH
   
-  minhash = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=5)
+  minhash = MinHashLSH(inputCol="features", outputCol="hashes", numHashTables=15)
   minhash_model = minhash.fit(vectorized_df)
   lsh_df = minhash_model.transform(vectorized_df)
   
@@ -188,12 +188,12 @@ cleaned_df = raw_df.select(
   col("title"),
   col("description"),
   col("keywords"),
-  col("keywords"),
   concat_ws(" ", 
-    col("title"), 
+    col("title"), col("title"), col("title"), col("title"), col("title"), # more emphasis
     when(col("description") != "No description available", col("description"))
     .otherwise(lit("")),
-    array_join(col("keywords"), " ")
+    array_join(col("keywords"), " "),
+    col("cluster_label"), col("cluster_label"), col("cluster_label"),
   ).alias("text_content")
 )
 
@@ -210,7 +210,7 @@ processed_df = nlp_model.transform(cleaned_df)
 #     array_union("tokens", "bigrams")
 # )
 
-# processed_df = processed_df.filter(size(col("tokens")) >= 15)
+processed_df = processed_df.filter(size(col("tokens")) >= 35)
 
 tokens_df = processed_df.select("course_id", "title", col("tokens").alias("tokens")) 
   
@@ -221,18 +221,27 @@ print(f"DF Rows: {vectorized_df.count()}")
 # Scenario A: Exact TF-IDF (Ground Truth)
 # recommendations = run_scenario_exact_knn(vectorized_df)
 
-choice = sys.argv[1]
+try:
+  choice = int(sys.argv[1])
+except (IndexError, ValueError):
+  print("Usage: spark-submit recommender.py [1|2|3]")
+  sys.exit(1)
+
+recommendations = None
 
 if choice == 1:
   # Scenario B: Fast TF-IDF (MinHash LSH)
   recommendations = run_scenario_approx_knn(vectorized_df, k=5, bottom_threshold=0.01, top_threshold=0.4)
 elif choice == 2:
   # Scenario C: Thematic LDA (BRP LSH)
-  recommendations = run_scenario_lda_knn(vectorized_df, cv_model, k=5, num_topics=38)
+  recommendations = run_scenario_lda_knn(vectorized_df, cv_model, k=5, num_topics=10)
 elif choice == 3:
   # hybrid similarity logic
-  recommendations = run_hybrid_scenario(vectorized_df, cv_model, k=5, num_topics=38)
+  recommendations = run_hybrid_scenario(vectorized_df, cv_model, k=5, num_topics=20)
 
-print(f"Total recommendations generated: {recommendations.count()}")
-recommendations.show(20, truncate=False)
-export_recommendations_to_mongodv(recommendations, collection_name="course_recommendations")
+if recommendations is not None:
+  print(f"Total recommendations generated: {recommendations.count()}")
+  recommendations.show(20, truncate=False)
+  export_recommendations_to_mongodv(recommendations, collection_name="course_recommendations")
+else:
+  print("Invalid choice. Please select 1, 2, or 3.")
