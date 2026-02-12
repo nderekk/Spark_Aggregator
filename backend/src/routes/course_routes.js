@@ -3,7 +3,7 @@ const router = express.Router();
 const courseController = require('../controllers/course_controller');
 const {verifyToken,isAdmin} = require('../middleware/auth'); 
 
-router.get('/',  courseController.getAllCourses);
+router.get('/', verifyToken, courseController.getAllCourses);
 router.get('/favorites',  verifyToken, courseController.getFavoriteCourses);
 router.get('/recentlyViewed', verifyToken, courseController.getRecentlyViewedCourses);
 router.get('/:id',  courseController.getCourse);
