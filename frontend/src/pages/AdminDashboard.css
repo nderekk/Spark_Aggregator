@@ -1,241 +1,212 @@
-/* --- Γενική Διάταξη & Typography --- */
+/* AdminDashboard.css - Unified theme */
 .admin-container {
-    padding: 2rem;
-    max-width: 1300px;
-    margin: 0 auto;
-    font-family: 'Inter', -apple-system, sans-serif;
-    color: #333;
-    background-color: #fcfcfc;
-    min-height: 100vh;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 70px);
+  background: linear-gradient(160deg, #f0f9ff 0%, var(--color-bg) 50%, var(--color-bg-subtle) 100%);
 }
 
-/* --- Header & Navigation --- */
 .admin-header {
-    border-bottom: 2px solid #eee;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
 }
 
 .header-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .admin-header h1 {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 2.2rem;
-    letter-spacing: -0.5px;
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .admin-nav {
-    display: flex;
-    gap: 0.8rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .nav-btn {
-    padding: 0.7rem 1.2rem;
-    border-radius: 8px;
-    border: 1px solid #dfe6e9;
-    background: white;
-    color: #2d3436;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .nav-btn:hover {
-    background: #f1f2f6;
-    border-color: #b2bec3;
-    transform: translateY(-1px);
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-.nav-btn.blue {
-    background: #eef2ff;
-    border-color: #3498db;
-    color: #3498db;
-}
-
-/* --- Grid & Cards (ETL & Spark Sections) --- */
 .admin-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .admin-card {
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    border-top: 6px solid #3498db; /* Blue for Harvesting */
-    transition: transform 0.3s ease;
-}
-
-.admin-card.spark-card {
-    border-top-color: #e67e22; /* Orange for Spark ML */
+  background: var(--color-surface);
+  padding: 1.75rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  transition: all 0.2s ease;
 }
 
 .admin-card:hover {
-    transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.admin-card.spark-card {
+  border-left-color: var(--color-warning);
 }
 
 .admin-card h2 {
-    margin-top: 0;
-    font-size: 1.4rem;
-    color: #2c3e50;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .admin-card p {
-    color: #636e72;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin-bottom: 2rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
 }
 
-/* --- Buttons (Sync & Spark) --- */
 .button-group {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .sync-btn {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    background-color: #3498db;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 0 #2980b9;
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .sync-btn:hover:not(:disabled) {
-    background-color: #2980b9;
-    transform: translateY(-2px);
-}
-
-.sync-btn:active:not(:disabled) {
-    transform: translateY(2px);
-    box-shadow: none;
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--color-primary-shadow);
 }
 
 .spark-btn {
-    width: 100%;
-    padding: 1.1rem;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-    color: white;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
 }
 
 .spark-btn:hover:not(:disabled) {
-    box-shadow: 0 6px 20px rgba(230, 126, 34, 0.4);
-    filter: brightness(1.1);
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
-.sync-btn:disabled, .spark-btn:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+.sync-btn:disabled,
+.spark-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* --- Activity Log Table --- */
 .monitoring-section h2 {
-    color: #2c3e50;
-    margin-bottom: 1.2rem;
-    font-size: 1.5rem;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 .log-table-container {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
 }
 
 .log-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
 }
 
 .log-table th {
-    background: #2c3e50;
-    color: white;
-    padding: 1.2rem 1rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 1px;
+  background: var(--color-text);
+  color: white;
+  padding: 0.9rem 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
 }
 
 .log-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #f1f1f1;
-    font-size: 0.95rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-text);
 }
 
-/* --- Status Badges & Row Colors --- */
+.log-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .status-badge {
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 .status-badge.success {
-    background-color: #d4edda;
-    color: #155724;
+  background: #d1fae5;
+  color: #065f46;
 }
 
 .status-badge.error {
-    background-color: #f8d7da;
-    color: #721c24;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .row-error {
-    background-color: #fff9f9;
+  background: #fef2f2;
 }
 
-.row-spark-ml {
-    background-color: #fffaf4; /* Subtle orange for ML logs */
-}
-
-.empty-logs {
-    text-align: center;
-    padding: 4rem !important;
-    color: #95a5a6;
-    font-style: italic;
-    background: #fafafa;
-}
-
-/* --- Mobile Responsive --- */
 @media (max-width: 768px) {
-    .admin-grid {
-        grid-template-columns: 1fr;
-    }
-    .header-main {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+  .admin-container { padding: 1rem; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .header-main { flex-direction: column; align-items: flex-start; }
 }
