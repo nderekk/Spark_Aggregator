@@ -390,7 +390,7 @@ module.exports = {
     getFavoriteCourses,
     deleteFavoriteCourse,
     postRecentlyViewedCourse,
-    getRecentlyViewedCourses
+    getRecentlyViewedCourses,
     syncAllSources,
     getAvailableSources
 };
