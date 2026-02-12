@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 import axios from 'axios';
 import './CourseDetails.css';
 
@@ -10,24 +11,30 @@ const CourseDetails = () => {
   const [similarCourses, setSimilarCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
-  
 
+  const hasTracked = useRef(false);
+  
   useEffect(() => {
+    if (hasTracked.current) return;
+    hasTracked.current = true;
+
     const trackVisit = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
       try {
-        await axios.post(`http://localhost:3000/courses/${id}/recentlyViewed`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          `http://localhost:3000/courses/${id}/recentlyViewed`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       } catch (err) {
         console.error("Error updating recently viewed history", err);
       }
     };
 
-    trackVisit();
-  }, [id]);
+  trackVisit();
+}, [id]);
 
   useEffect(() => {
     fetchCourseDetails();
