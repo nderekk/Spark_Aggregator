@@ -10,6 +10,7 @@ import sys
 def compute_ground_truth(df, spark_context):
   from pyspark.ml.feature import Normalizer
   from pyspark.mllib.linalg.distributed import IndexedRow, IndexedRowMatrix
+  from pyspark.mllib.linalg import Vectors
   
   # 1. Normalize Vectors (L2) - Critical for Cosine Similarity
   # Cosine Sim is just Dot Product of L2-normalized vectors.
@@ -20,7 +21,7 @@ def compute_ground_truth(df, spark_context):
   # Map (unique_id, vector)
   rdd_vectors = norm_df.select("course_id", "norm_features").rdd \
     .zipWithUniqueId() \
-    .map(lambda x: IndexedRow(x[1], x[0]["norm_features"]))
+    .map(lambda x: IndexedRow(x[1], Vectors.fromML(x[0]["norm_features"])))
 
   mat = IndexedRowMatrix(rdd_vectors)
   
