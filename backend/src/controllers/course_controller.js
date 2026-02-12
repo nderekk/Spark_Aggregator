@@ -1,4 +1,5 @@
 const Course = require('../models/Courses');
+const User = require('../models/Users');
 const Recommendation = require('../models/Recommendation');
 const mongoose = require('mongoose');
 const fs = require('fs');
@@ -195,6 +196,140 @@ const deleteCourse = async (req, res) => {
 
 };
 
+const postFavoriteCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            { $addToSet: { favoriteCourses: id } }, // Adds course ID if it's not already there
+            { new: true } // Returns the updated user
+        ).populate('favoriteCourses'); // Fills the array with full course data
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            favoriteCourses: updatedUser.favoriteCourses
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add course to favorites.' });
+    }   
+
+};
+
+const deleteFavoriteCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            { $pull: { favoriteCourses: id } }, // Removes the course ID from the array
+            { new: true }
+        ).populate('favoriteCourses');
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            message: 'Course removed from favorites.',
+            favoriteCourses: updatedUser.favoriteCourses
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to remove course from favorites.' });
+    }
+};
+
+const getFavoriteCourses = async (req, res) => {
+    try {
+        const userID = req.userID;
+
+        const user = await User.findById(userID)
+            .populate({
+                path: 'favoriteCourses',
+                model: 'Course'
+            })
+            .select('favoriteCourses');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            count: user.favoriteCourses.length,
+            favoriteCourses: user.favoriteCourses
+        });
+    } catch (error) {
+        console.error("Error fetching favorite courses:", error);
+        res.status(500).json({ error: 'Failed to fetch favorite courses.' });
+    }
+
+};
+
+const postRecentlyViewedCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        //First delete the course if it already exists in the field, so it renews the timestamp
+        await User.updateOne(
+            { _id: userID },
+            { $pull: { recentlyViewed: { courseId: id } } }
+        );
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            {
+                $push: {
+                    recentlyViewed: {
+                        $each: [{ courseId: id, viewedAt: new Date() }],
+                        $position: 0, // Moves to the front of the list
+                        $slice: 30    // Keeps only the last 30 viewed items
+                    }
+                }
+            },
+            { new: true }
+        ).populate('recentlyViewed.courseId');
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            recentlyViewed: updatedUser.recentlyViewed
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update recently viewed courses.' });
+    }
+
+};
+
+const getRecentlyViewedCourses = async (req, res) => {
+    try {
+        const userID = req.userID;
+
+        const user = await User.findById(userID)
+            .populate({
+                path: 'recentlyViewed.courseId',
+                model: 'Course'
+            })
+            .select('recentlyViewed'); 
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json(user.recentlyViewed);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch recently viewed courses.' });
+    }
+};
+
+
 const syncAllSources = async (req, res) => {
     try {
         const connectorsPath = path.join(__dirname, '../services/connectors');
@@ -251,6 +386,11 @@ module.exports = {
     updateCourse,
     deleteCourse,
     getCourse,
+    postFavoriteCourse,
+    getFavoriteCourses,
+    deleteFavoriteCourse,
+    postRecentlyViewedCourse,
+    getRecentlyViewedCourses
     syncAllSources,
     getAvailableSources
 };

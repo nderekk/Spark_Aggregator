@@ -78,6 +78,7 @@ const signIn = async (req, res) => {
         });
         res.json({
             message: "Logged in successfully",
+            token: accessToken,
             user: { 
                 id: user._id, 
                 firstName: user.firstName, 

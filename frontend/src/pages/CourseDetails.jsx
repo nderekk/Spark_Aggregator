@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 import axios from 'axios';
 import './CourseDetails.css';
 
@@ -9,10 +10,36 @@ const CourseDetails = () => {
   const [course, setCourse] = useState(null);
   const [similarCourses, setSimilarCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const hasTracked = useRef(false);
+  
+  useEffect(() => {
+    if (hasTracked.current) return;
+    hasTracked.current = true;
+
+    const trackVisit = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        await axios.post(
+          `http://localhost:3000/courses/${id}/recentlyViewed`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (err) {
+        console.error("Error updating recently viewed history", err);
+      }
+    };
+
+  trackVisit();
+}, [id]);
 
   useEffect(() => {
     fetchCourseDetails();
     fetchSimilarCourses();
+    checkIfFavorite();
   }, [id]);
 
   const fetchCourseDetails = async () => {
@@ -34,6 +61,46 @@ const CourseDetails = () => {
       setSimilarCourses(response.data);
     } catch (error) {
       console.error('Error fetching similar courses:', error);
+    }
+  };
+
+  const checkIfFavorite = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await axios.get(`http://localhost:3000/courses/favorites`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const found = res.data.favoriteCourses.some(fav => fav._id === id);
+      setIsFavorite(found);
+    } catch (err) {
+      console.error("Could not fetch favorites", err);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Συνδεθείτε για να αποθηκεύσετε το μάθημα");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await axios.delete(`http://localhost:3000/courses/${id}/favorites`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsFavorite(false);
+      } else {
+        await axios.post(`http://localhost:3000/courses/${id}/favorites`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsFavorite(true);
+      }
+    } catch (err) {
+      console.error("Error toggling favorite status", err);
+      alert("Προέκυψε σφάλμα κατά την ενημέρωση των αγαπημένων.");
     }
   };
 
@@ -82,11 +149,21 @@ const CourseDetails = () => {
                 <span className="badge badge-level">{course.level}</span>
                 <span className="badge badge-source">{course.source}</span>
                 <span className="badge badge-language">{course.language}</span>
+                <button 
+                  className={`fav-button ${isFavorite ? 'is-fav' : ''}`} 
+                  onClick={toggleFavorite}
+                >
+                  {isFavorite ? '❤' : '+'} 
+                </button>
                 {course.cluster_id && (
                   <span className="badge badge-cluster">🏷️ {course.cluster_label == [] ? "No Topic" : course.cluster_label}</span>
                 )}
               </div>
-              <h1 className="course-main-title">{course.title}</h1>
+    
+              <div className="title-wrapper">
+                <h1 className="course-main-title">{course.title}</h1>
+              </div>
+
               <p className="course-subtitle">{course.description}</p>
               
               {course.instructor && (

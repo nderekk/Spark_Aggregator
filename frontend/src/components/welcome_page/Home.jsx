@@ -219,9 +219,24 @@ const Home = () => {
     <div className="home-container">
       <div className="home-wrapper">
         {/* Header Section */}
+        {/* Header Section */}
         <div className="page-header">
           <div className="header-content">
-            <h1>Καλώς ήρθες, {user?.firstName}! 👋</h1>
+            <div className="header-welcome-row">
+              <h1>Καλώς ήρθες, {user?.firstName}! 👋</h1>
+              <button 
+                onClick={() => navigate('/favorites')} 
+                className="favorites-btn"
+              >
+              Αγαπημένα Μαθήματα
+              </button>
+              <button 
+                onClick={() => navigate('/history')} 
+                className="favorites-btn"
+              >
+              Προβλήθηκαν Πρόσφατα
+              </button>
+            </div>
             <p className="header-subtitle">Εξερεύνησε μαθήματα από όλο τον κόσμο</p>
           </div>
         </div>

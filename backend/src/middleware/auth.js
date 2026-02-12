@@ -1,8 +1,12 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
+    let token = req.cookies.token;
 
-    const token = req.cookies.token;
+    const authHeader = req.headers['authorization'];
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    }
 
     if (!token) {
         console.log("No token provided in cookies");
@@ -11,7 +15,8 @@ const verifyToken = (req, res, next) => {
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
-        req.user = verified; 
+        
+        req.userID = verified.id; 
         next();
     } catch (error) {
         console.error("Token verification failed:", error);

@@ -6,6 +6,8 @@ import SignUp from './components/auth/SignUp';
 import Home from './components/welcome_page/Home';
 import CourseDetails from './pages/CourseDetails';
 import Analytics from './pages/Analytics';
+import Favorites from './pages/Favorites';
+import History from './pages/History';
 import AdminDashboard from './pages/AdminDashboard';
 import Error from './components/Error'; 
 
@@ -39,6 +41,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/courses/:id" element={<CourseDetails />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/history" element={<History />} />
 
           {/* Protected Admin Routes */}
           <Route 
