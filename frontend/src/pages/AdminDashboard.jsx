@@ -49,7 +49,6 @@ const AdminDashboard = () => {
         try {
             // Εδώ καλείς το Spark endpoint σου με το συγκεκριμένο option
             await axios.post(`http://localhost:3000/analytics/run-spark/${option}`, {}, { withCredentials: true });
-            alert(`Το Spark Job ξεκίνησε! Σενάριο: ${optionName}`);
             addLog('SPARK-ML', 'Success', `Σενάριο ${optionName} ολοκληρώθηκε`);
         } catch (error) {
             addLog('SPARK-ML', 'Error', `Αποτυχία σενάριου ${optionName}`);
@@ -63,7 +62,6 @@ const AdminDashboard = () => {
         setIsClusterRunning(true);
         try {
             await axios.post('http://localhost:3000/analytics/run-cluster', {}, { withCredentials: true });
-            alert("Το Clustering Job ξεκίνησε! Υπολογισμός LDA Topics σε εξέλιξη...");
             addLog('CLUSTERING', 'Success', 'Clustering και Topic Modeling ολοκληρώθηκε');
         } catch (error) {
             addLog('CLUSTERING', 'Error', 'Αποτυχία σύνδεσης με Clustering Job');
