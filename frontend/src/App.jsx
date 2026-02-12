@@ -6,7 +6,8 @@ import SignUp from './components/auth/SignUp';
 import Home from './components/welcome_page/Home';
 import CourseDetails from './pages/CourseDetails';
 import Analytics from './pages/Analytics';
-import AdminDashboard from './pages/AdminDashboard'; 
+import AdminDashboard from './pages/AdminDashboard';
+import Error from './components/Error'; 
 
 const ProtectedRoute = ({ children, isAdminRequired }) => {
     const userString = localStorage.getItem('user');
@@ -59,7 +60,7 @@ function App() {
           />
 
           {/* Fallback για λάθος URLs */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Error />} />
         </Routes>
       </div>
     </Router>

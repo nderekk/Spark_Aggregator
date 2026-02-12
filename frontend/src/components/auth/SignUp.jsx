@@ -24,7 +24,7 @@ const SignUp = () => {
     // Validation
     if (formData.password.length < 6) {
       setError('Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες');
-      setLoading(<false></false>);
+      setLoading(false);
       return;
     }
 
