@@ -9,6 +9,7 @@ const verifyToken = (req, res, next) => {
     }
 
     if (!token) {
+        console.log("No token provided in cookies");
         return res.status(401).json({ message: "Access Denied: No Token Provided" });
     }
 
@@ -18,8 +19,20 @@ const verifyToken = (req, res, next) => {
         req.userID = verified.id; 
         next();
     } catch (error) {
+        console.error("Token verification failed:", error);
         res.status(401).json({ message: "Token expired or invalid" });
     }
 };
 
-module.exports = verifyToken;
+const isAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+};
+
+module.exports = {
+    verifyToken,
+    isAdmin
+};

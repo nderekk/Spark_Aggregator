@@ -155,6 +155,9 @@ const CourseDetails = () => {
                 >
                   {isFavorite ? '❤' : '+'} 
                 </button>
+                {course.cluster_id && (
+                  <span className="badge badge-cluster">🏷️ {course.cluster_label == [] ? "No Topic" : course.cluster_label}</span>
+                )}
               </div>
     
               <div className="title-wrapper">
@@ -256,7 +259,7 @@ const CourseDetails = () => {
               <div className="similar-courses-list">
                 {similarCourses.length > 0 ? (
                   similarCourses.map((similar) => {
-                    const matchPercentage = similar.score ? Math.round((1 - similar.score) * 100) : null;
+                    const matchPercentage = similar.score ? Math.round((similar.score) * 100) : null;
 
                     return (
                       <div

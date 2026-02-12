@@ -1,15 +1,14 @@
-/* Navbar.css */
+/* Navbar.css - Unified theme */
 .dropbox-navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e7e9eb;
+  padding: 14px 28px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 1000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
 }
 
 .nav-left {
@@ -26,7 +25,7 @@
 }
 
 .nav-logo-link:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .ceid-logo {
@@ -35,79 +34,85 @@
 }
 
 .brand-name {
-  font-size: 20px;
+  font-size: 1.15rem;
   font-weight: 600;
-  color: #1e1919;
-  letter-spacing: -0.3px;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 0.5rem;
 }
 
-/* Login Link */
 .nav-link-login {
   text-decoration: none;
-  color: #1e1919;
-  font-size: 15px;
+  color: var(--color-text);
+  font-size: 0.95rem;
   font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .nav-link-login:hover {
-  background-color: #f7f8f9;
-  color: #0061ff;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
-/* Sign up Button */
 .nav-btn-signup {
-  background-color: #0061ff;
-  color: #ffffff;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.55rem 1.25rem;
+  border-radius: var(--radius-sm);
   text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
 }
 
 .nav-btn-signup:hover {
-  background-color: #0055e0;
+  background-color: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 97, 255, 0.2);
+  box-shadow: 0 4px 12px var(--color-primary-shadow);
 }
 
-.nav-btn-signup:active {
-  transform: translateY(0);
+.admin-special-link {
+  color: var(--color-primary) !important;
+  font-weight: 600 !important;
+  background: var(--color-primary-light);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-sm);
 }
 
-/* Responsive Design */
+.nav-btn-logout {
+  background-color: var(--color-error) !important;
+}
+
+.nav-btn-logout:hover {
+  background-color: #b91c1c !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+
 @media (max-width: 768px) {
   .dropbox-navbar {
-    padding: 12px 20px;
+    padding: 12px 1.25rem;
   }
-  
   .brand-name {
-    font-size: 18px;
+    font-size: 1rem;
   }
-  
   .nav-right {
-    gap: 16px;
+    gap: 0.35rem;
   }
-  
   .nav-link-login {
-    padding: 6px 12px;
-    font-size: 14px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.875rem;
   }
-  
   .nav-btn-signup {
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 0.45rem 1rem;
+    font-size: 0.875rem;
   }
 }

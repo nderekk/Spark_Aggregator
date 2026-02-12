@@ -2,6 +2,8 @@ const Course = require('../models/Courses');
 const User = require('../models/Users');
 const Recommendation = require('../models/Recommendation');
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 
 const createCourse = async (req, res) => {
     try {
@@ -115,7 +117,10 @@ const syncSource = async (req, res) => {
         const bulkOps = normalized.map(course => ({
             replaceOne: {
                 filter: { externalId: course.externalId },
-                replacement: course,
+                replacement: {
+                    ...course,
+                    source: course.source
+                },
                 upsert: true
             }
         }));
@@ -131,6 +136,21 @@ const syncSource = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+const getAvailableSources = async (req, res) => {
+    try {
+        const connectorsPath = path.join(__dirname, '../services/connectors');
+        const files = fs.readdirSync(connectorsPath);
+        
+        const sources = files
+            .filter(file => file.endsWith('.js'))
+            .map(file => file.replace('.js', ''));
+            
+        res.json({ sources });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch sources' });
     }
 };
 
@@ -310,10 +330,56 @@ const getRecentlyViewedCourses = async (req, res) => {
 };
 
 
+const syncAllSources = async (req, res) => {
+    try {
+        const connectorsPath = path.join(__dirname, '../services/connectors');
+        const files = fs.readdirSync(connectorsPath);
+        const sources = files
+            .filter(file => file.endsWith('.js'))
+            .map(file => file.replace('.js', ''));
+
+        let totalAdded = 0;
+        const results = [];
+
+        for (const source of sources) {
+            try {
+                const connector = require(`../services/connectors/${source}.js`);
+                const data = await connector.getCourses();
+                const normalized = connector.normalize(data);
+
+                const bulkOps = normalized.map(course => ({
+                    replaceOne: {
+                        filter: { externalId: course.externalId },
+                        replacement: { ...course },
+                        upsert: true
+                    }
+                }));
+
+                if (bulkOps.length > 0) {
+                    await Course.bulkWrite(bulkOps);
+                    totalAdded += normalized.length;
+                    results.push({ source, status: 'success', count: normalized.length });
+                }
+            } catch (err) {
+                console.error(`Error syncing ${source}:`, err);
+                results.push({ source, status: 'failed', error: err.message });
+            }
+        }
+
+        res.json({ 
+            message: "Global sync completed", 
+            added: totalAdded,
+            details: results 
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Global sync failed: ' + error.message });
+    }
+};
+
 
 module.exports = {
     getAllCourses,
-    getCourseById : getCourse,
+    getCourseById,
     getSimilarCourses,
     syncSource,
     createCourse,
@@ -325,4 +391,6 @@ module.exports = {
     deleteFavoriteCourse,
     postRecentlyViewedCourse,
     getRecentlyViewedCourses
+    syncAllSources,
+    getAvailableSources
 };
