@@ -8,6 +8,7 @@ const AdminDashboard = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [availableSources, setAvailableSources] = useState([]);
     const [isSparkRunning, setIsSparkRunning] = useState(false);
+    const [isClusterRunning, setIsClusterRunning] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -43,20 +44,33 @@ const AdminDashboard = () => {
     };
 
     // Λειτουργία Spark ML Trigger (Section 4.4 της εργασίας)
-    const handleSparkJob = async () => {
+    const handleSparkJob = async (option, optionName) => {
         setIsSparkRunning(true);
         try {
-            // Εδώ καλείς το Spark endpoint σου
-            await axios.post('http://localhost:3000/analytics/run-spark', {}, { withCredentials: true });
-            alert("Το Spark Job ξεκίνησε! Υπολογισμός Cosine Similarity σε εξέλιξη...");
-            addLog('SPARK-ML', 'Success', 'Επαναϋπολογισμός recommendations ολοκληρώθηκε');
+            // Εδώ καλείς το Spark endpoint σου με το συγκεκριμένο option
+            await axios.post(`http://localhost:3000/analytics/run-spark/${option}`, {}, { withCredentials: true });
+            alert(`Το Spark Job ξεκίνησε! Σενάριο: ${optionName}`);
+            addLog('SPARK-ML', 'Success', `Σενάριο ${optionName} ολοκληρώθηκε`);
         } catch (error) {
-            addLog('SPARK-ML', 'Error', 'Αποτυχία σύνδεσης με Spark Cluster');
+            addLog('SPARK-ML', 'Error', `Αποτυχία σενάριου ${optionName}`);
         } finally {
             setIsSparkRunning(false);
         }
     };
-
+    // Λειτουργία Clustering Trigger (LDA Topic Modeling)
+    const handleClusterJob = async () => {
+        if (!window.confirm('Έναρξη Clustering Job (LDA - Topic Modeling);')) return;
+        setIsClusterRunning(true);
+        try {
+            await axios.post('http://localhost:3000/analytics/run-cluster', {}, { withCredentials: true });
+            alert("Το Clustering Job ξεκίνησε! Υπολογισμός LDA Topics σε εξέλιξη...");
+            addLog('CLUSTERING', 'Success', 'Clustering και Topic Modeling ολοκληρώθηκε');
+        } catch (error) {
+            addLog('CLUSTERING', 'Error', 'Αποτυχία σύνδεσης με Clustering Job');
+        } finally {
+            setIsClusterRunning(false);
+        }
+    };
     const addLog = (source, status, message) => {
         const newLog = { id: Date.now(), source, time: new Date().toLocaleTimeString(), status, message };
         setSyncLogs(prev => [newLog, ...prev]);
@@ -96,12 +110,52 @@ const AdminDashboard = () => {
                 <div className="admin-card spark-card">
                     <h2>Apache Spark ML Engine</h2>
                     <p>Εκτέλεση Large-scale επεξεργασίας για Recommendations.</p>
+                    <div className="spark-buttons-grid">
+                        <button 
+                            onClick={() => handleSparkJob('0', 'Exact TF-IDF')} 
+                            disabled={isSparkRunning}
+                            className="spark-btn"
+                            title="Ground Truth - Ακριβές Cosine Similarity"
+                        >
+                            {isSparkRunning ? 'Processing...' : '🎯 Exact TF-IDF'}
+                        </button>
+                        <button 
+                            onClick={() => handleSparkJob('1', 'Fast LSH')} 
+                            disabled={isSparkRunning}
+                            className="spark-btn"
+                            title="MinHash LSH - Γρήγορη προσέγγιση"
+                        >
+                            {isSparkRunning ? 'Processing...' : '⚡ Fast LSH'}
+                        </button>
+                        <button 
+                            onClick={() => handleSparkJob('2', 'Thematic LDA')} 
+                            disabled={isSparkRunning}
+                            className="spark-btn"
+                            title="LDA + BRP LSH - Θεματικές συστάσεις"
+                        >
+                            {isSparkRunning ? 'Processing...' : '📚 Thematic LDA'}
+                        </button>
+                        <button 
+                            onClick={() => handleSparkJob('3', 'Hybrid')} 
+                            disabled={isSparkRunning}
+                            className="spark-btn"
+                            title="Hybrid - Συνδυασμός όλων των μεθόδων"
+                        >
+                            {isSparkRunning ? 'Processing...' : '🔀 Hybrid'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* SECTION 2B: CLUSTERING OPS */}
+                <div className="admin-card cluster-card">
+                    <h2>📊 Course Clustering (LDA)</h2>
+                    <p>Ομαδοποίηση μαθημάτων σε θεματικές ομάδες με LDA Topic Modeling.</p>
                     <button 
-                        onClick={handleSparkJob} 
-                        disabled={isSparkRunning}
-                        className="spark-btn"
+                        onClick={handleClusterJob} 
+                        disabled={isClusterRunning}
+                        className="cluster-btn"
                     >
-                        {isSparkRunning ? 'Processing...' : 'Run Similarity Job (TF-IDF)'}
+                        {isClusterRunning ? 'Clustering...' : 'Run Clustering Job'}
                     </button>
                 </div>
             </div>
