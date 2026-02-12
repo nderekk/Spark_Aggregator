@@ -9,6 +9,18 @@ const userSchema = new mongoose.Schema({
     favoriteCourses: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Course' 
+    }],
+    recentlyViewed: [{
+        //Keeps the courseID
+        courseId: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: 'Course' 
+        },
+        //and when that course was added
+        viewedAt: { 
+            type: Date, 
+            default: Date.now 
+        }
     }]
 }, { timestamps: true });
 

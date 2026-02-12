@@ -250,6 +250,65 @@ const getFavoriteCourses = async (req, res) => {
 
 };
 
+const postRecentlyViewedCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userID = req.userID;
+
+        //First delete the course if it already exists in the field, so it renews the timestamp
+        await User.updateOne(
+            { _id: userID },
+            { $pull: { recentlyViewed: { courseId: id } } }
+        );
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userID,
+            {
+                $push: {
+                    recentlyViewed: {
+                        $each: [{ courseId: id, viewedAt: new Date() }],
+                        $position: 0, // Moves to the front of the list
+                        $slice: 30    // Keeps only the last 30 viewed items
+                    }
+                }
+            },
+            { new: true }
+        ).populate('recentlyViewed.courseId');
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json({
+            recentlyViewed: updatedUser.recentlyViewed
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update recently viewed courses.' });
+    }
+
+};
+
+const getRecentlyViewedCourses = async (req, res) => {
+    try {
+        const userID = req.userID;
+
+        const user = await User.findById(userID)
+            .populate({
+                path: 'recentlyViewed.courseId',
+                model: 'Course'
+            })
+            .select('recentlyViewed'); 
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        res.status(200).json(user.recentlyViewed);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch recently viewed courses.' });
+    }
+};
+
 
 
 module.exports = {
@@ -263,5 +322,7 @@ module.exports = {
     getCourse,
     postFavoriteCourse,
     getFavoriteCourses,
-    deleteFavoriteCourse
+    deleteFavoriteCourse,
+    postRecentlyViewedCourse,
+    getRecentlyViewedCourses
 };

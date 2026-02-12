@@ -10,6 +10,24 @@ const CourseDetails = () => {
   const [similarCourses, setSimilarCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  
+
+  useEffect(() => {
+    const trackVisit = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        await axios.post(`http://localhost:3000/courses/${id}/recentlyViewed`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Error updating recently viewed history", err);
+      }
+    };
+
+    trackVisit();
+  }, [id]);
 
   useEffect(() => {
     fetchCourseDetails();

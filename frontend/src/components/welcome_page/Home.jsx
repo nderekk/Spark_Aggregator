@@ -231,6 +231,12 @@ const Home = () => {
               >
               Αγαπημένα Μαθήματα
               </button>
+              <button 
+                onClick={() => navigate('/history')} 
+                className="favorites-btn"
+              >
+              Προβλήθηκαν Πρόσφατα
+              </button>
             </div>
             <p className="header-subtitle">Εξερεύνησε μαθήματα από όλο τον κόσμο</p>
           </div>

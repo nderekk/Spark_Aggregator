@@ -5,11 +5,13 @@ const verifyToken = require('../middleware/auth');
 
 router.get('/',  courseController.getAllCourses);
 router.get('/favorites',  verifyToken, courseController.getFavoriteCourses);
+router.get('/recentlyViewed', verifyToken, courseController.getRecentlyViewedCourses);
 router.get('/:id',  courseController.getCourse);
 router.get('/:id/similar', courseController.getSimilarCourses); // thema me to token
 router.get('/sync/:source', verifyToken, courseController.syncSource);
 router.post('/:id/favorites',  verifyToken, courseController.postFavoriteCourse);
 router.delete('/:id/favorites',  verifyToken, courseController.deleteFavoriteCourse);
+router.post('/:id/recentlyViewed', verifyToken, courseController.postRecentlyViewedCourse);
 
 
 router.post('/', verifyToken,courseController.createCourse);

@@ -12,27 +12,21 @@ const Favorites = () => {
     const fetchFavorites = async () => {
       try {
         const userData = localStorage.getItem('user');
-        // If we don't have a user or a token, redirect to login
         if (!userData) {
           navigate('/login');
           return;
         }
 
-        // --- UPDATED LOGIC HERE ---
-        // 1. URL: Changed to /courses/favorites based on your route file
-        // 2. Credentials: We need cookies/headers for the 'verifyToken' middleware
         const response = await axios.get('http://localhost:3000/courses/favorites', {
             withCredentials: true 
         });
         
-        // 3. Data Structure: Your controller returns { count: X, favoriteCourses: [...] }
         if (response.data && response.data.favoriteCourses) {
             setFavorites(response.data.favoriteCourses);
         }
 
       } catch (error) {
         console.error('Error fetching favorites:', error);
-        // Optional: If error is 401 (Unauthorized), force logout
         if (error.response && error.response.status === 401) {
             navigate('/login');
         }
