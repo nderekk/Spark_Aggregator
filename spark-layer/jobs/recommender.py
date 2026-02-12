@@ -217,10 +217,10 @@ cleaned_df = raw_df.select(
   col("description"),
   col("keywords"),
   concat_ws(" ", 
-    col("title"), col("title"), col("title"), col("title"), col("title"), # 5x Title Boost
-    when(col("description") != "No description available", col("description"))
-    .otherwise(lit("")),
-    array_join(col("keywords"), " "),
+    col("title"), col("title"), col("title"),
+   when(col("description") != "No description available", col("description"))
+   .otherwise(lit("")),
+    array_join(col("keywords"), " "), array_join(col("keywords"), " "), array_join(col("keywords"), " ")
   ).alias("text_content")
 )
 
@@ -229,7 +229,7 @@ nlp_pipeline = get_nlp_pipeline(cleaned_df)
 nlp_model = nlp_pipeline.fit(cleaned_df)  
 processed_df = nlp_model.transform(cleaned_df)
 
-processed_df = processed_df.filter(size(col("tokens")) >= 35)
+processed_df = processed_df.filter(size(col("tokens")) >= 10)
 tokens_df = processed_df.select("course_id", "title", col("tokens").alias("tokens")) 
   
 # VECTORIZE
