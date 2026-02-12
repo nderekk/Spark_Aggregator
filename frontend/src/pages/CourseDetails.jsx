@@ -14,6 +14,7 @@ const CourseDetails = () => {
 
   const hasTracked = useRef(false);
   
+  //Race Condition to write in report
   useEffect(() => {
     if (hasTracked.current) return;
     hasTracked.current = true;
