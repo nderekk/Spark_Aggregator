@@ -1,0 +1,43 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: aggregator_db
+    ports:
+      - "27018:27017"
+    volumes: 
+      - mongo_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: aggregator_backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Προσοχή: Το host είναι 'mongo' (το όνομα του service), όχι localhost
+      - MONGODB_URI=mongodb://mongo:27017/aggregator_db
+      - SPARK_MASTER=local[*]
+    volumes:
+      - ./backend:/app           # Hot-reload για τον κώδικα του Node
+      - ./spark-layer:/spark-layer # <--- ΤΟ ΚΛΕΙΔΙ! Καρφώνουμε το spark-layer στο root του container
+      - /app/node_modules        # Εξαιρούμε τα node_modules για να μην γίνουν overwrite
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./frontend
+    container_name: aggregator_frontend
+    ports:
+      - "5000:5000"
+    environment:
+      # Το React τρέχει στον browser του χρήστη, άρα το localhost:3000 είναι σωστό ΕΔΩ
+      - REACT_APP_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true # Απαραίτητο για να μην κλείνει το React container αμέσως
+    tty: true
+
+volumes:
+  mongo_data:
