@@ -39,19 +39,12 @@ const Home = () => {
   // 1. Check Authentication
   useEffect(() => {
     const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
     
-    if (userData) {
-      setIsAuthenticated(true);
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
+    if (userData && token) {
+        setUser(JSON.parse(userData));
         setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        setIsAuthenticated(false);
-      }
     } else {
-        setIsAuthenticated(false);
         setLoading(false);
     }
   }, []);
@@ -114,7 +107,11 @@ const Home = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:3000/courses', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
         withCredentials: true 
       });
       const data = Array.isArray(response.data) ? response.data : (response.data.courses || []);

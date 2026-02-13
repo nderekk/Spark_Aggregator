@@ -1,4 +1,5 @@
 const User = require('../models/Users');
+const Token = require('../models/Token');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 dotenv = require('dotenv');
@@ -61,21 +62,17 @@ const signIn = async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
         const payload = { id: user._id, email: user.email ,role: user.role, permissionLevel: user.permissionLevel};
-        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
-        const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, { expiresIn: '7d' });
+        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+        
+        await Token.create({ userId: user._id, token: accessToken });
 
         res.cookie('token', accessToken, {
             httpOnly: true,
             secure: false, 
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: 24 * 60 * 60 * 1000
         });
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: false, 
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+       
         res.json({
             message: "Logged in successfully",
             token: accessToken,
@@ -114,15 +111,16 @@ const deleteUser = async (req, res) => {
 };
 
 const signout = async (req, res) => {
-
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/' 
-    });
-
-    return res.status(200).json({ message: "Αποσυνδεθήκατε με επιτυχία!" });
+    try {
+        const token = req.cookies.token;
+        
+        await Token.findOneAndDelete({ token });
+        
+        res.clearCookie('token');
+        return res.status(200).json({ message: "Αποσυνδεθήκατε!" });
+    } catch (err) {
+        res.status(500).json({ error: "Logout failed" });
+    }
 };
 
 
