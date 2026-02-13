@@ -16,8 +16,9 @@ const Favorites = () => {
           navigate('/login');
           return;
         }
-
+        const token = localStorage.getItem('token');
         const response = await axios.get('http://localhost:3000/courses/favorites', {
+            headers: { Authorization: `Bearer ${token}` },
             withCredentials: true 
         });
         

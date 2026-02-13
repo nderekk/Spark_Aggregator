@@ -19,11 +19,14 @@ const Analytics = () => {
   }, [navigate]);
 
   const handleSync = async () => {
+    
   try {
     if (!window.confirm("Θέλετε να ξεκινήσετε το συγχρονισμό δεδομένων; Αυτό μπορεί να πάρει μερικά λεπτά.")) return;
     
     setLoading(true);
+    const token = localStorage.getItem('token');
     const response = await axios.post('http://localhost:3000/courses/sync-courses', {}, {
+      headers: { Authorization: `Bearer ${token}` },
       withCredentials: true 
     });
     
@@ -40,7 +43,9 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:3000/analytics/stats', {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true 
       });
       setStats(response.data);
