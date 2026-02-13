@@ -158,7 +158,7 @@ def run_hybrid_scenario(vectorized_df, cv_model, k=5, num_topics=38, weights=(0.
 
 # --- EXPORT UTIL ---
 def export_recommendations_to_mongodv(df, collection_name="course_recommendations"):
-  """Explicitly writes to Atlas, bypassing session defaults."""
+  """Explicitly writes to aggregator_db, bypassing session defaults."""
     
   df.cache() 
   count = df.count()
@@ -168,7 +168,7 @@ def export_recommendations_to_mongodv(df, collection_name="course_recommendation
     print("ABORT: DataFrame is empty. Check your similarity thresholds!")
     return
 
-  target_uri = atlas_uri.replace("/?", f"/test?") 
+  target_uri = atlas_uri.replace("/?", f"/aggregator_db?") 
 
   # Handle both "score" (Exact) and "distance" (LSH/Hybrid)
   # If 'score' exists, use it. If not, map 'distance' to 'score'.
@@ -191,11 +191,11 @@ def export_recommendations_to_mongodv(df, collection_name="course_recommendation
     .format("mongodb") \
     .mode("overwrite") \
     .option("connection.uri", target_uri) \
-    .option("database", "test") \
+    .option("database", "aggregator_db") \
     .option("collection", collection_name) \
     .save()
 
-  print("SUCCESS: Exported recommendations to Atlas test database.")
+  print("SUCCESS: Exported recommendations to aggregator_db database.")
 
 # --- MAIN EXECUTION ---
 spark = get_spark_session()
@@ -203,9 +203,9 @@ sc = spark.sparkContext
 
 # READ
 raw_df = spark.read.format("mongodb")\
-  .option("database", "test") \
+  .option("database", "aggregator_db") \
   .option("collection", "courses") \
-  .load().repartition(12)
+  .load().repartition(spark.sparkContext.defaultParallelism * 2)
   
 raw_df.persist()
 print(f"Total rows in raw_df: {raw_df.count()}")
@@ -219,10 +219,10 @@ cleaned_df = raw_df.select(
   col("cluster_label"),
   concat_ws(" ", 
     col("title"), col("title"), col("title"),
-   when(col("description") != "No description available", col("description"))
-   .otherwise(lit("")),
+    when(col("description") != "No description available", col("description"))
+    .otherwise(lit("")),
     array_join(col("keywords"), " "), array_join(col("keywords"), " "), array_join(col("keywords"), " "),
-    array_join(col("cluster_label"), " "), array_join(col("cluster_label"), " "), array_join(col("cluster_label"), " ")
+    col("cluster_label"), col("cluster_label"), col("cluster_label")
   ).alias("text_content")
 )
 
