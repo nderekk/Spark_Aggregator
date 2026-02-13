@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 
-atlas_uri = "mongodb+srv://admin:1234@cluster0.mtbfxhi.mongodb.net/?appName=Cluster0"
+atlas_uri = "mongodb://mongo:27017/aggregator_db"
 
 
 def get_spark_session():
@@ -15,7 +15,7 @@ def get_spark_session():
     .config("spark.mongodb.read.heartbeat.frequency.ms", "10000") \
     .config("spark.mongodb.write.heartbeat.frequency.ms", "10000") \
     .config("spark.mongodb.read.maxConnectionIdleTimeMS", "10000") \
-    .config("spark.mongodb.read.database", "test") \
+    .config("spark.mongodb.read.database", "aggregator_db") \
     .config("spark.mongodb.read.collection", "courses") \
     .config("spark.jars.packages", 
       "org.mongodb.spark:mongo-spark-connector_2.12:10.3.0,"

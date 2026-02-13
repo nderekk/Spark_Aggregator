@@ -43,14 +43,14 @@ def update_courses_with_clusterIds(lda_df):
   
   course_clusters.printSchema()
   
-  target_uri = atlas_uri.replace("/?", f"/test?")
+  target_uri = atlas_uri.replace("/?", f"/aggregator_db?")
   
   print(f'Writting {course_clusters.count()} into Database...')
   course_clusters.write \
     .format("mongodb") \
     .mode("append") \
     .option("connection.uri", target_uri) \
-    .option("database", "test") \
+    .option("database", "aggregator_db") \
     .option("collection", "courses") \
     .option("idFieldList", "externalId") \
     .option("operationType", "update") \
@@ -62,9 +62,9 @@ def update_courses_with_clusterIds(lda_df):
 spark = get_spark_session()
 
 raw_data = spark.read.format("mongodb")\
-  .option("database", "test") \
+  .option("database", "aggregator_db") \
   .option("collection", "courses") \
-  .load().repartition(12)
+  .load().repartition(spark.sparkContext.defaultParallelism * 2)
   
 print("Data read")
   
