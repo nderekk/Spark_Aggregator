@@ -20,8 +20,14 @@ const AdminDashboard = () => {
 
         const fetchSources = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/courses/sources', { withCredentials: true });
-                setAvailableSources(response.data.sources);
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const response = await axios.get('http://localhost:3000/courses/sources', { 
+                    headers: {Authorization: `Bearer ${token}`},
+                    withCredentials: true });
+                if (response.data.sources) {
+                    setAvailableSources(response.data.sources);
+                }
             } catch (error) {
                 console.error("Αποτυχία φόρτωσης πηγών:", error);
             }
@@ -33,10 +39,17 @@ const AdminDashboard = () => {
     const handleSync = async (source) => {
         if (!window.confirm(`Έναρξη ETL process για: ${source.toUpperCase()};`)) return;
         setIsSyncing(true);
+        const token = localStorage.getItem('token');
         try {
-            const response = await axios.get(`http://localhost:3000/courses/sync/${source}`, { withCredentials: true });
+            const response = await axios.get(`http://localhost:3000/courses/sync/${source}`, { 
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                withCredentials: true 
+            });
             addLog(source, 'Success', `Συγχρονίστηκαν ${response.data.count} μαθήματα`);
         } catch (error) {
+            if (error.response?.status === 401) navigate('/login');
             addLog(source, 'Error', error.response?.data?.message || 'Αποτυχία connector');
         } finally {
             setIsSyncing(false);
@@ -46,9 +59,12 @@ const AdminDashboard = () => {
     // Λειτουργία Spark ML Trigger (Section 4.4 της εργασίας)
     const handleSparkJob = async (option, optionName) => {
         setIsSparkRunning(true);
+        const token = localStorage.getItem('token');
         try {
             // Εδώ καλείς το Spark endpoint σου με το συγκεκριμένο option
-            await axios.post(`http://localhost:3000/analytics/run-spark/${option}`, {}, { withCredentials: true });
+            await axios.post(`http://localhost:3000/analytics/run-spark/${option}`, {}, { 
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true });
             addLog('SPARK-ML', 'Success', `Σενάριο ${optionName} ολοκληρώθηκε`);
         } catch (error) {
             addLog('SPARK-ML', 'Error', `Αποτυχία σενάριου ${optionName}`);
@@ -60,8 +76,11 @@ const AdminDashboard = () => {
     const handleClusterJob = async () => {
         if (!window.confirm('Έναρξη Clustering Job (LDA - Topic Modeling);')) return;
         setIsClusterRunning(true);
+        const token = localStorage.getItem('token');
         try {
-            await axios.post('http://localhost:3000/analytics/run-cluster', {}, { withCredentials: true });
+            await axios.post('http://localhost:3000/analytics/run-cluster', {}, { 
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true });
             addLog('CLUSTERING', 'Success', 'Clustering και Topic Modeling ολοκληρώθηκε');
         } catch (error) {
             addLog('CLUSTERING', 'Error', 'Αποτυχία σύνδεσης με Clustering Job');

@@ -142,14 +142,20 @@ const syncSource = async (req, res) => {
 const getAvailableSources = async (req, res) => {
     try {
         const connectorsPath = path.join(__dirname, '../services/connectors');
-        const files = fs.readdirSync(connectorsPath);
+
+        console.log('Checking connectors directory at:', connectorsPath);
         
+        if(!fs.existsSync(connectorsPath)) {
+            return res.status(404).json({ error: 'Connectors directory not found' });
+        }
+        const files = fs.readdirSync(connectorsPath);
         const sources = files
             .filter(file => file.endsWith('.js'))
             .map(file => file.replace('.js', ''));
             
         res.json({ sources });
     } catch (error) {
+        console.error('Error fetching sources:', error);
         res.status(500).json({ error: 'Failed to fetch sources' });
     }
 };

@@ -30,11 +30,11 @@ const Login = () => {
       // Αποθήκευση του JWT Token
       if (response.data && response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        } else {
-        localStorage.setItem('token', 'is_logged_in'); 
-    }
+        const token = response.data.token;
+        if (token) {
+        localStorage.setItem('token', token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        }
         navigate('/');
       }else {
         setError('Λάθος email ή κωδικός πρόσβασης');

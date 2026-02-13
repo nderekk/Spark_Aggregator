@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const Token = require('../models/Token');
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     let token = req.cookies.token;
 
     const authHeader = req.headers['authorization'];
@@ -14,9 +15,15 @@ const verifyToken = (req, res, next) => {
     }
 
     try {
+
+        const tokenExists = await Token.findOne({ token });
+        if (!tokenExists) {
+            return res.status(401).json({ message: "Token is no longer valid (logged out)" });
+        }
         const verified = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
         
         req.userID = verified.id; 
+        req.userRole = verified.role;
         next();
     } catch (error) {
         console.error("Token verification failed:", error);
@@ -25,7 +32,7 @@ const verifyToken = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+    if (req.userRole === 'admin') {
         next();
     } else {
         res.status(403).json({ message: "Access Denied: Admins Only" });

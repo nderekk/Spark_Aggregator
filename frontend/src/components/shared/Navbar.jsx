@@ -15,7 +15,7 @@ const Navbar = () => {
     const userString = localStorage.getItem('user');
    
     
-    if (userString) {
+    if (userString && userString !== 'undefined') {
       try {
         const user = JSON.parse(userString); 
         setIsAuthenticated(true);
