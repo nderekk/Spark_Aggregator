@@ -216,11 +216,13 @@ cleaned_df = raw_df.select(
   col("title"),
   col("description"),
   col("keywords"),
+  col("cluster_label"),
   concat_ws(" ", 
     col("title"), col("title"), col("title"),
    when(col("description") != "No description available", col("description"))
    .otherwise(lit("")),
-    array_join(col("keywords"), " "), array_join(col("keywords"), " "), array_join(col("keywords"), " ")
+    array_join(col("keywords"), " "), array_join(col("keywords"), " "), array_join(col("keywords"), " "),
+    array_join(col("cluster_label"), " "), array_join(col("cluster_label"), " "), array_join(col("cluster_label"), " ")
   ).alias("text_content")
 )
 

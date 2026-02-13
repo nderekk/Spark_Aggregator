@@ -94,9 +94,6 @@ def clean_and_prepare_features(processed_df):
 
   idf = IDF(inputCol="raw_features", outputCol="features")
   idf_model = idf.fit(vectorized_tokens)
-  
-# 3. CRITICAL: Filter out courses that became "empty" vectors after TF-IDF
-  # We use vector_to_array to check if there are any non-zero values
   final_vectorized_df = idf_model.transform(vectorized_tokens).drop("raw_features")
   
   # @udf(returnType=BooleanType())
