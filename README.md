@@ -56,9 +56,9 @@ The entire environment is containerized to ensure consistency across different o
 
 2. **Clone the Repository**
 Create a .env file in the backend/ folder:
-  # Use the provided .env.example as a template
-  # Ensure MONGO_URI is set to:
-  # MONGO_URI=mongodb://mongo:27017/aggregator_db
+  * Use the provided .env.example as a template
+  * Ensure MONGO_URI is set to:
+  * MONGO_URI=mongodb://mongo:27017/aggregator_db
 
 3. **Build and Launch Containers**
   docker-compose up --build
