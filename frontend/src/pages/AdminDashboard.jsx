@@ -4,11 +4,14 @@ import axios from 'axios';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-    const [syncLogs, setSyncLogs] = useState([]);
     const [isSyncing, setIsSyncing] = useState(false);
     const [availableSources, setAvailableSources] = useState([]);
     const [isSparkRunning, setIsSparkRunning] = useState(false);
     const [isClusterRunning, setIsClusterRunning] = useState(false);
+    const [syncLogs, setSyncLogs] = useState(() => {
+    const savedLogs = localStorage.getItem('admin_logs');
+    return savedLogs ? JSON.parse(savedLogs) : [];
+    });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -34,6 +37,11 @@ const AdminDashboard = () => {
         };
         fetchSources();
     }, [navigate]);
+
+    // logs 
+    useEffect(() => {
+        localStorage.setItem('admin_logs', JSON.stringify(syncLogs));
+    }, [syncLogs]);
 
     // Λειτουργία Harvesting (Section 4.1 της εργασίας)
     const handleSync = async (source) => {
@@ -89,10 +97,21 @@ const AdminDashboard = () => {
         }
     };
     const addLog = (source, status, message) => {
-        const newLog = { id: Date.now(), source, time: new Date().toLocaleTimeString(), status, message };
+        const newLog = { 
+            id: Date.now(), 
+            source, 
+            time: new Date().toLocaleTimeString(), 
+            status, 
+            message 
+        };
         setSyncLogs(prev => [newLog, ...prev]);
     };
-
+    const clearLogs = () => {
+        if (window.confirm('Είστε σίγουροι ότι θέλετε να διαγράψετε όλα τα logs;')) {
+            setSyncLogs([]);
+            localStorage.removeItem('admin_logs');
+        }
+    };
     return (
         <div className="admin-container">
             <header className="admin-header">
@@ -180,6 +199,11 @@ const AdminDashboard = () => {
             {/* SECTION 3: LOGS */}
             <div className="monitoring-section">
                 <h2>System Activity Log</h2>
+                {syncLogs.length > 0 && (
+                    <button onClick={clearLogs} className="clear-btn">
+                        Clear History
+                    </button>
+                )}
                 <div className="log-table-container">
                     <table className="log-table">
                         <thead>
