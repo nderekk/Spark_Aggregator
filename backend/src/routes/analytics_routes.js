@@ -6,5 +6,6 @@ const {verifyToken} = require('../middleware/auth');
 router.get('/stats', verifyToken, analyticsController.getStats);
 router.post('/run-spark/:option', verifyToken, analyticsController.runSparkJob);
 router.post('/run-cluster', verifyToken, analyticsController.runClusterJob);
+router.post('/run-userRecs', verifyToken, analyticsController.runUserRecsJob);
 
 module.exports = router;

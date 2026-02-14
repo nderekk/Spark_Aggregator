@@ -126,7 +126,7 @@ const runSparkJob = async (req, res) => {
     const scriptPath = "../spark-layer/jobs/recommender.py";
     const recommender_option = req.params.option || '0';
 
-    console.log(`🚀 Attempting to run: ${scriptPath} with option ${recommender_option}`);
+    console.log(`Attempting to run: ${scriptPath} with option ${recommender_option}`);
 
     // 2. Δοκιμάζουμε την εντολή 'python'. Αν δεν δουλεύει, δοκίμασε 'py' ή 'python3'
     const pythonProcess = spawn('python3', [scriptPath, recommender_option], {
@@ -170,7 +170,7 @@ const runSparkJob = async (req, res) => {
 const runClusterJob = async (req, res) => {
     const scriptPath = "../spark-layer/jobs/clusterer.py";
 
-    console.log(`🚀 Attempting to run Clusterer: ${scriptPath}`);
+    console.log(`Attempting to run Clusterer: ${scriptPath}`);
 
     const pythonProcess = spawn('python3', [scriptPath], {
         shell: true
@@ -209,8 +209,53 @@ const runClusterJob = async (req, res) => {
     });
 };
 
+const runUserRecsJob = async (req, res) => {
+    const scriptPath = "../spark-layer/jobs/personal_suggestions.py";
+
+    console.log(`Attempting to run User Recommendations: ${scriptPath}`);
+
+    const pythonProcess = spawn('python3', [scriptPath], {
+        shell: true
+    });
+
+    let output = "";
+    let errorOutput = "";
+
+    pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+        console.log(`Spark Output: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        console.log(`Spark Log: ${data}`); 
+    });
+
+    // 5-minute timeout
+    const timeout = setTimeout(() => {
+        pythonProcess.kill();
+        if (!res.headersSent) {
+            res.status(408).json({ message: "Cluster Job Timeout - Το script αργεί πολύ" });
+        }
+    }, 300000);
+
+    pythonProcess.on('close', (code) => {
+        clearTimeout(timeout);
+        if (code !== 0) {
+            console.error(`Spark process exited with code ${code}`);
+            if (!res.headersSent) {
+                return res.status(500).json({ message: "Spark Job Error", error: errorOutput });
+            }
+        }
+        if (!res.headersSent) {
+            res.status(200).json({ message: "Success", details: output });
+        }
+    });
+};
+
 module.exports = {
     getStats,
     runSparkJob,
-    runClusterJob
+    runClusterJob,
+    runUserRecsJob
 };
