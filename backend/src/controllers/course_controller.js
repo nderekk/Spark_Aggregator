@@ -1,6 +1,7 @@
 const Course = require('../models/Courses');
 const User = require('../models/Users');
 const Recommendation = require('../models/Recommendation');
+const UserRecommendation = require('../models/UserRecommendation');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
@@ -382,6 +383,32 @@ const syncAllSources = async (req, res) => {
     }
 };
 
+const getPersonalisedCourses = async (req, res) => {
+    try {
+        const userId = req.userID; 
+
+        // Find the list of IDs recommended for this user
+        const recommendationDoc = await UserRecommendation.findOne({ userId: userId });
+
+        if (!recommendationDoc || !recommendationDoc.recommendedCourseIds.length) {
+            return res.status(200).json({ recommendations: [] });
+        }
+
+        // Fetch the full course details for those IDs
+        const courseIds = recommendationDoc.recommendedCourseIds.map(id => new mongoose.Types.ObjectId(id));
+
+        const recommendedCourses = await Course.find({
+            '_id': { $in: courseIds }
+        });
+
+        res.status(200).json({ recommendations: recommendedCourses });
+
+    } catch (error) {
+        console.error("Recommendation Error:", error);
+        res.status(500).json({ message: "Error fetching recommendations" });
+    }
+};
+
 
 module.exports = {
     getAllCourses,
@@ -398,5 +425,6 @@ module.exports = {
     postRecentlyViewedCourse,
     getRecentlyViewedCourses,
     syncAllSources,
-    getAvailableSources
+    getAvailableSources,
+    getPersonalisedCourses
 };
