@@ -8,6 +8,7 @@ const AdminDashboard = () => {
     const [availableSources, setAvailableSources] = useState([]);
     const [isSparkRunning, setIsSparkRunning] = useState(false);
     const [isClusterRunning, setIsClusterRunning] = useState(false);
+    const [isUserRecsRunning, setIsUserRecsRunning] = useState(false);
     const [syncLogs, setSyncLogs] = useState(() => {
     const savedLogs = localStorage.getItem('admin_logs');
     return savedLogs ? JSON.parse(savedLogs) : [];
@@ -96,6 +97,25 @@ const AdminDashboard = () => {
             setIsClusterRunning(false);
         }
     };
+
+    const handleUserRecsJob = async () => {
+        if (!window.confirm('Έναρξη User Recommendation Job (ALS - Collaborative Filtering);')) return;
+        setIsUserRecsRunning(true);
+        const token = localStorage.getItem('token');
+        try {
+            await axios.post('http://localhost:3000/analytics/run-userRecs', {}, { 
+                headers: { Authorization: `Bearer ${token}` },
+                withCredentials: true 
+            });
+            addLog('USER-ALS', 'Success', 'Δημιουργία εξατομικευμένων προτάσεων ολοκληρώθηκε');
+        } catch (error) {
+            console.error(error);
+            addLog('USER-ALS', 'Error', 'Αποτυχία κατά την εκτέλεση του ALS Job');
+        } finally {
+            setIsUserRecsRunning(false);
+        }
+    };
+
     const addLog = (source, status, message) => {
         const newLog = { 
             id: Date.now(), 
@@ -195,6 +215,20 @@ const AdminDashboard = () => {
                     </button>
                 </div>
             </div>
+
+                {/* SECTION 2C: COLLABORATIVE FILTERING OPS */}
+                <div className="admin-card user-recs-card" style={{borderLeft: "5px solid #9c27b0"}}>
+                    <h2>👥 User Personalization (ALS)</h2>
+                    <p>Παραγωγή προτάσεων βάσει ιστορικού χρηστών (Collaborative Filtering).</p>
+                    <button 
+                        onClick={handleUserRecsJob} 
+                        disabled={isUserRecsRunning}
+                        className="cluster-btn" // Reusing styling class for consistency
+                        style={{backgroundColor: "#9c27b0"}} // Distinct purple color
+                    >
+                        {isUserRecsRunning ? 'Training ALS Model...' : 'Run User Recommendations'}
+                    </button>
+                </div>
 
             {/* SECTION 3: LOGS */}
             <div className="monitoring-section">

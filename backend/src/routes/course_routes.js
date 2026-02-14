@@ -5,6 +5,7 @@ const {verifyToken,isAdmin} = require('../middleware/auth');
 
 router.get('/', verifyToken, courseController.getAllCourses);
 router.get('/favorites',  verifyToken, courseController.getFavoriteCourses);
+router.get('/personalised',  verifyToken, courseController.getPersonalisedCourses);
 router.get('/recentlyViewed', verifyToken, courseController.getRecentlyViewedCourses);
 router.get('/sources', verifyToken,isAdmin, courseController.getAvailableSources);
 
