@@ -3,3 +3,9 @@ venv
 .vscode
 /spark_checkpoints
 __pycache__
+*.minted
+*.aux
+*.gz
+*.log
+*.out
+*.toc
