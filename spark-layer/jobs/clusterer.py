@@ -93,8 +93,8 @@ vectorized_df, cv_model = clean_and_prepare_features(tokens_df)
 print(f"DF Rows: {vectorized_df.count()}")
     
 clusters = get_lda_topics(vectorized_df, cv_model, num_topics=15, max_iter=200)
-clusters.describe().show()
+# clusters.describe().show()
 print(f"Total clusters generated: {clusters.count()}")
-clusters.show(20, truncate=True)
+# clusters.show(20, truncate=True)
 
 update_courses_with_clusterIds(clusters)

@@ -207,6 +207,7 @@ raw_df = spark.read.format("mongodb")\
   .option("collection", "courses") \
   .load().repartition(spark.sparkContext.defaultParallelism * 2)
   
+raw_df = raw_df.filter(raw_df.description.isNotNull() & (raw_df.description != ""))
 raw_df.persist()
 print(f"Total rows in raw_df: {raw_df.count()}")
 
@@ -268,7 +269,7 @@ elif choice == 3:
 # OUTPUT
 if recommendations is not None:
   print(f"Total recommendations generated: {recommendations.count()}")
-  recommendations.show(20, truncate=False)
+  # recommendations.show(20, truncate=False)
   export_recommendations_to_mongodv(recommendations, collection_name="course_recommendations")
 else:
   print("Invalid choice selected.")
